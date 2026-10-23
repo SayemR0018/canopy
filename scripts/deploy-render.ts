@@ -17,6 +17,20 @@ interface RenderService {
   };
 }
 
+async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 3, delayMs = 1500): Promise<Response> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const res = await fetch(url, options);
+      return res;
+    } catch (err: any) {
+      if (i === retries - 1) throw err;
+      console.warn(`  ⚠️ Request to ${url} failed (${err.message}). Retrying (${i + 1}/${retries})...`);
+      await new Promise((r) => setTimeout(r, delayMs * (i + 1)));
+    }
+  }
+  throw new Error(`Failed to fetch ${url} after ${retries} attempts.`);
+}
+
 async function deploy() {
   console.log('======================================================');
   console.log('🚀 Milestone 7: Render REST API Automated Deployment');
@@ -37,7 +51,7 @@ async function deploy() {
   try {
     // 1. Fetch owners
     console.log('[1/4] Fetching Render account owner details...');
-    const ownersRes = await fetch('https://api.render.com/v1/owners', { headers });
+    const ownersRes = await fetchWithRetry('https://api.render.com/v1/owners', { headers });
 
     if (!ownersRes.ok) {
       const err = await ownersRes.text();
@@ -54,7 +68,7 @@ async function deploy() {
 
     // 2. Query services
     console.log('[2/4] Querying existing Render Web Services...');
-    const servicesRes = await fetch('https://api.render.com/v1/services?limit=50', { headers });
+    const servicesRes = await fetchWithRetry('https://api.render.com/v1/services?limit=50', { headers });
     if (!servicesRes.ok) {
       const err = await servicesRes.text();
       throw new Error(`Render API services query returned ${servicesRes.status}: ${err}`);
@@ -140,7 +154,7 @@ async function deploy() {
       const serviceId = s.service.id;
       console.log(`  Updating env vars for ${s.service.name} (${serviceId})...`);
 
-      const putRes = await fetch(`https://api.render.com/v1/services/${serviceId}/env-vars`, {
+      const putRes = await fetchWithRetry(`https://api.render.com/v1/services/${serviceId}/env-vars`, {
         method: 'PUT',
         headers,
         body: JSON.stringify(desiredEnvVars),
@@ -163,7 +177,7 @@ async function deploy() {
     console.log('\n[4/4] Verifying Render deployment status & health...');
     for (const s of targetServices) {
       const serviceId = s.service.id;
-      const deploysRes = await fetch(`https://api.render.com/v1/services/${serviceId}/deploys?limit=1`, {
+      const deploysRes = await fetchWithRetry(`https://api.render.com/v1/services/${serviceId}/deploys?limit=1`, {
         headers,
       });
 
@@ -183,7 +197,7 @@ async function deploy() {
 
       if (url) {
         try {
-          const healthRes = await fetch(`${url}/healthz`);
+          const healthRes = await fetchWithRetry(`${url}/healthz`);
           if (healthRes.ok) {
             const health = await healthRes.json();
             console.log(`  Health:  ✅ HTTP 200 OK (uptime: ${health.uptime}s, cache: ${health.cacheEntries})`);
