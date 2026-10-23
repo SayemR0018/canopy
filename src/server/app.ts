@@ -396,5 +396,10 @@ export function createApp(config: AppConfig) {
     }
   });
 
+  app.onError((err, c) => {
+    sentry.captureException(err, { path: c.req.path, method: c.req.method });
+    return c.json({ error: err.message || 'Internal Server Error' }, 500);
+  });
+
   return app;
 }

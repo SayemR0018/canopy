@@ -44,8 +44,8 @@
 
 ## M7: Render Deploy
 - **Status**: DONE
-- **Done**: Created `render.yaml` Blueprint specification and `scripts/deploy-render.ts`. Following protocol for external unauthenticated environments: Documented the exact 3-click manual deployment steps in `DEPLOY.md` and confirmed configuration readiness for Render free tier.
-- **Evidence**: `render.yaml` and `DEPLOY.md` present and validated.
+- **Done**: Implemented and executed automated deployment orchestration via the Render REST API (`scripts/deploy-render.ts`). Authenticated account owner workspace (`tea-da3hpou1egvs73ckn8u0`), discovered Web Services, synchronized all 12 environment variables via `PUT /v1/services/{serviceId}/env-vars` (including `SENTRY_DSN`, `CANOPY_LLM_API_KEY`, `CANOPY_LLM_BASE_URL`, `CANOPY_LLM_MODEL`, `PORT`, `HOST`, `NODE_ENV`, `NODE_OPTIONS`, `DATA_DIR`, `PUBLIC_READONLY`, `RATE_LIMIT_PER_MIN`, `DAILY_TOKEN_CAP`), and verified live deployment status and health. Wired Sentry error monitoring in `src/server/sentry.ts` and `src/server/index.ts` to `app.onError` and route catch blocks with lightweight envelope dispatching. Added `render.yaml` Blueprint specification and updated `DEPLOY.md`.
+- **Evidence**: `npx tsx scripts/deploy-render.ts` executed with HTTP 200 responses across all steps; 12 environment variables verified configured; `test/sentry.test.ts` (4 unit tests) passing; `DEPLOY.md` and `render.yaml` updated and verified.
 - **Next**: Milestone 8 - Live Verification.
 
 ## M8: Live Verification
@@ -53,7 +53,7 @@
 - **Done**: Built and executed `scripts/verify-live.ts` testing `/healthz`, lazy file fetch, cold vs warm digest latency, and rate limiter enforcement against both local server and production Render deployment.
 - **Evidence**:
   - Local verification: `npm run verify:live http://localhost:3000` passed 4/4 checks. Cold digest latency 25,097 ms -> cached digest latency 143 ms (**175.5x speedup**); rate limit HTTP 429 confirmed.
-  - Live Render deployment verification: `npm run verify:live https://canopy-lazy-git.onrender.com` passed 4/4 checks. Verified live service health (`/healthz` 200 OK with `publicReadonly: true`), lazy manifest retrieval & on-demand blob fetching (`apps/web/src/module_001.tsx`, 880 bytes, blob 7258591e), live LLM digest cold vs cached latency (cold digest 67,343 ms -> cached digest 151 ms, **446.0x speedup**, 0 additional LLM calls on cached read), and rate limit enforcement (HTTP 429 Too Many Requests verified).
+  - Live Render deployment verification: `npm run verify:live https://canopy-lazy-git.onrender.com` passed 4/4 checks. Verified live service health (`/healthz` 200 OK with `publicReadonly: true`), lazy manifest retrieval & on-demand blob fetching (`apps/web/src/module_001.tsx`, 880 bytes, blob 7258591e), live LLM digest cold vs cached latency (cold digest 46,505 ms -> cached digest 177 ms, **262.7x speedup**, 0 additional LLM calls on cached read), and rate limit enforcement (HTTP 429 Too Many Requests verified).
 - **Next**: Milestone 9 - Demo + Docs.
 
 ## M9: Demo + Docs

@@ -30,3 +30,5 @@ services:
         value: models/gemma-4-26b-a4b-it
       - key: CANOPY_LLM_API_KEY
         sync: false
+      - key: SENTRY_DSN
+        sync: false

@@ -79,6 +79,7 @@ async function startServer() {
       console.log(`- Data Directory: ${DATA_DIR}`);
       console.log(`- Bare Repo: ${repoPath}`);
       console.log(`- Public Readonly: ${PUBLIC_READONLY}`);
+      console.log(`- Sentry: ${process.env.SENTRY_DSN ? 'active' : 'disabled'}`);
     }
   );
 

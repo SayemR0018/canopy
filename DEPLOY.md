@@ -1,17 +1,40 @@
 # Deploying Canopy to Render
 
-Canopy is fully packaged for Render using Docker (`Dockerfile`) and an Infrastructure-as-Code Blueprint (`render.yaml`).
+Canopy is fully packaged for Render using Docker (`Dockerfile`), an Infrastructure-as-Code Blueprint (`render.yaml`), and an automated REST API deployment orchestrator (`scripts/deploy-render.ts`).
 
 ---
 
-## 1. Exact Settings for Existing Render Web Service (`canopy`)
+## 1. Automated Deployment via Render REST API (Milestone 7)
 
-If you created your Web Service directly in Render (e.g. `https://canopy-lazy-git.onrender.com`):
+Canopy includes an automated deployment orchestration script (`scripts/deploy-render.ts`) that interfaces directly with the Render REST API (v1).
+
+### Execution
+
+```bash
+# Set credentials in .env (never committed)
+# RENDER_API_KEY=rnd_...
+# SENTRY_DSN=https://...
+# CANOPY_LLM_API_KEY=AIza...
+
+npx tsx scripts/deploy-render.ts
+```
+
+### What `deploy-render.ts` Orchestrates:
+1. **Account Authentication**: Resolves account owner workspace ID via `GET https://api.render.com/v1/owners`.
+2. **Service Discovery**: Queries existing services via `GET https://api.render.com/v1/services`. If absent, automatically provisions a new Docker Web Service (`canopy-lazy-git`).
+3. **Environment Variable Synchronization**: Programmatically synchronizes all 12 configuration keys via `PUT https://api.render.com/v1/services/{serviceId}/env-vars` (including `SENTRY_DSN`, `CANOPY_LLM_API_KEY`, `CANOPY_LLM_BASE_URL`, `CANOPY_LLM_MODEL`, `PORT`, `HOST`, `NODE_ENV`, `NODE_OPTIONS`, `DATA_DIR`, `PUBLIC_READONLY`, `RATE_LIMIT_PER_MIN`, `DAILY_TOKEN_CAP`).
+4. **Deploy & Health Verification**: Verifies deployment state via `GET https://api.render.com/v1/services/{serviceId}/deploys` and probes live HTTP health at `/healthz`.
+
+---
+
+## 2. Live Deployment Settings & Variables
+
+Target Production URL: **`https://canopy-lazy-git.onrender.com`**
 
 ### **General / Build & Deploy Settings**
 | Setting Field | Exact Value |
 | :--- | :--- |
-| **Name** | `canopy` |
+| **Name** | `canopy-lazy-git` |
 | **Repository** | `https://github.com/SayemR0018/canopy` |
 | **Branch** | `main` |
 | **Root Directory** | *(leave blank)* |
@@ -20,16 +43,10 @@ If you created your Web Service directly in Render (e.g. `https://canopy-lazy-gi
 | **Region** | `Oregon (US West)` |
 | **Dockerfile Path** | `./Dockerfile` |
 | **Docker Context** | `.` |
-| **Docker Command** | *(leave blank / default to CMD)* |
-
-### **Health Check & Networking**
-| Setting Field | Exact Value |
-| :--- | :--- |
 | **Health Check Path** | `/healthz` |
 | **Port** | `10000` *(Render sets $PORT automatically)* |
 
 ### **Environment Variables**
-In **Environment** tab:
 | Key | Value | Notes |
 | :--- | :--- | :--- |
 | `PORT` | `10000` | Render HTTP listener port |
@@ -42,25 +59,22 @@ In **Environment** tab:
 | `DAILY_TOKEN_CAP` | `200000` | LLM token daily budget |
 | `CANOPY_LLM_BASE_URL` | `https://generativelanguage.googleapis.com/v1beta/openai` | Google AI Studio OpenAI endpoint |
 | `CANOPY_LLM_MODEL` | `models/gemma-4-26b-a4b-it` | Google Gemma 4 model |
-| `CANOPY_LLM_API_KEY` | *(Your Google AI Studio API Key)* | Required for live LLM completions |
+| `CANOPY_LLM_API_KEY` | *(Secret: Google AI Studio API Key)* | Required for live LLM completions |
+| `SENTRY_DSN` | *(Secret: Sentry Project DSN)* | Active error monitoring & alerting |
 
 ---
 
-## 2. Alternative: Native Node Web Service (Without Docker)
+## 3. Sentry Integration & Monitoring
 
-If you configure the Web Service with **Node** runtime instead of Docker:
-
-| Setting Field | Value |
-| :--- | :--- |
-| **Environment / Runtime** | `Node` |
-| **Build Command** | `npm install && npm run build` |
-| **Start Command** | `npm start` |
-| **Health Check Path** | `/healthz` |
-| **Environment Variables** | Same table as above |
+When `SENTRY_DSN` is set:
+- **Server Boot**: Canopy logs `- Sentry: active` on startup.
+- **Global Error Handling**: `app.onError` captures unhandled exceptions and dispatches Sentry envelope payloads to Sentry's ingest endpoint (`/api/{projectId}/envelope/`).
+- **Route Error Handling**: Critical endpoints catch errors and forward them via `sentry.captureException(err, { endpoint })`.
+- **Zero-Dependency Fallback**: When `SENTRY_DSN` is not provided, the Sentry client acts as a silent, zero-overhead no-op.
 
 ---
 
-## 3. Automatic Deployment via Blueprint (3 Clicks)
+## 4. Alternative: Automatic Deployment via Blueprint (3 Clicks)
 
 1. **Click 1: New Blueprint Instance**
    - In Render Dashboard, click **"New +"** -> **"Blueprint"**.
@@ -68,4 +82,16 @@ If you configure the Web Service with **Node** runtime instead of Docker:
    - Select `https://github.com/SayemR0018/canopy.git`.
    - Render automatically parses `render.yaml`.
 3. **Click 3: Apply Blueprint**
-   - Fill in `CANOPY_LLM_API_KEY` secret when prompted, then click **"Apply"**.
+   - Fill in `CANOPY_LLM_API_KEY` and `SENTRY_DSN` secrets when prompted, then click **"Apply"**.
+
+---
+
+## 5. Live Production Verification Suite
+
+Verify live deployment health, lazy tree/blob fetching, LLM cache speedup, and rate limiting:
+
+```bash
+npm run verify:live
+```
+
+Target URL defaults to `https://canopy-lazy-git.onrender.com`. All 4 production verification gates pass with real HTTP assertions.
