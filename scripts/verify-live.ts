@@ -51,7 +51,7 @@ async function runLiveVerification() {
   console.log(`\n[3/4] Verifying cold vs cached digest latency...`);
   try {
     // Unique revision range to ensure cold execution if needed
-    const sinceParam = 'HEAD~7';
+    const sinceParam = process.env.CANOPY_DIGEST_SINCE || 'HEAD~15';
 
     const coldStart = performance.now();
     const coldRes = await fetch(`${targetUrl}/api/derived/digest?since=${encodeURIComponent(sinceParam)}&lang=en`);
@@ -84,18 +84,17 @@ async function runLiveVerification() {
     let hitRateLimit = false;
     let rateLimitStatus = 0;
 
-    // Send rapid burst of requests exceeding standard 60 req/min limit
-    const promises: Promise<Response>[] = [];
-    for (let i = 0; i < 85; i++) {
-      promises.push(fetch(`${targetUrl}/api/tree`));
-    }
-
-    const responses = await Promise.all(promises);
-    for (const r of responses) {
-      if (r.status === 429) {
-        hitRateLimit = true;
-        rateLimitStatus = 429;
-        break;
+    // Send rapid requests until exceeding standard 60 req/min limit
+    for (let i = 1; i <= 80; i++) {
+      try {
+        const res = await fetch(`${targetUrl}/api/tree`);
+        if (res.status === 429) {
+          hitRateLimit = true;
+          rateLimitStatus = 429;
+          break;
+        }
+      } catch {
+        // Ignore transient socket churn on rapid connections
       }
     }
 
