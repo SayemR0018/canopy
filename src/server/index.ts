@@ -6,17 +6,20 @@ import { createApp } from './app.js';
 import { GitService } from './git.js';
 import { openDatabase } from '../db/index.js';
 import { seedRepository } from '../seed.js';
+import { createSentry } from './sentry.js';
 
 dotenv.config();
 
-const PORT = parseInt(process.env.PORT || '3000', 10);
-const HOST = process.env.HOST || '0.0.0.0';
+const DEFAULT_PORT = parseInt(process.env.PORT || '3000', 10);
+const DEFAULT_HOST = process.env.HOST || '0.0.0.0';
 const DATA_DIR = process.env.DATA_DIR || './data';
 const PUBLIC_READONLY = process.env.PUBLIC_READONLY === 'true';
 const RATE_LIMIT_PER_MIN = parseInt(process.env.RATE_LIMIT_PER_MIN || '60', 10);
 const DAILY_TOKEN_CAP = parseInt(process.env.DAILY_TOKEN_CAP || '200000', 10);
 
-async function startServer() {
+async function startServer(overridePort?: number, overrideHost?: string) {
+  const PORT = overridePort ?? DEFAULT_PORT;
+  const HOST = overrideHost ?? DEFAULT_HOST;
   const repoPath = path.resolve(DATA_DIR, 'repo.git');
 
   // Auto-seed if bare repo is missing (critical for Render cold boot in <60s)
@@ -59,6 +62,8 @@ async function startServer() {
     CREATE INDEX IF NOT EXISTS idx_token_usage_date ON token_usage(date_str);
   `);
 
+  const sentry = createSentry(process.env.SENTRY_DSN);
+
   const app = createApp({
     gitService,
     db,
@@ -68,22 +73,28 @@ async function startServer() {
     sentryDsn: process.env.SENTRY_DSN,
   });
 
-  const server = serve(
-    {
-      fetch: app.fetch,
-      port: PORT,
-      hostname: HOST,
-    },
-    (info) => {
-      console.log(`🌲 Canopy Server running on http://${HOST}:${info.port}`);
-      console.log(`- Data Directory: ${DATA_DIR}`);
-      console.log(`- Bare Repo: ${repoPath}`);
-      console.log(`- Public Readonly: ${PUBLIC_READONLY}`);
-      console.log(`- Sentry: ${process.env.SENTRY_DSN ? 'active' : 'disabled'}`);
-    }
-  );
+  const server = await new Promise<any>((resolve) => {
+    const s = serve(
+      {
+        fetch: app.fetch,
+        port: PORT,
+        hostname: HOST,
+      },
+      (info) => {
+        console.log(`🌲 Canopy Server running on http://${HOST}:${info.port}`);
+        console.log(`- Data Directory: ${DATA_DIR}`);
+        console.log(`- Bare Repo: ${repoPath}`);
+        console.log(`- Public Readonly: ${PUBLIC_READONLY}`);
+        console.log(`- Sentry: ${process.env.SENTRY_DSN ? 'active' : 'disabled'}`);
+        if (process.env.SENTRY_DSN) {
+          sentry.captureMessage(`Canopy Server running on port ${info.port}`, 'info');
+        }
+        resolve(s);
+      }
+    );
+  });
 
-  return { app, server, gitService, db };
+  return { app, server, gitService, db, sentry };
 }
 
 const isServerMain = () => {
@@ -98,7 +109,20 @@ const isServerMain = () => {
 };
 
 if (isServerMain()) {
+  const sentry = createSentry(process.env.SENTRY_DSN);
+
+  process.on('uncaughtException', (err) => {
+    sentry.captureException(err, { source: 'process.uncaughtException' });
+    console.error('Uncaught Exception:', err);
+  });
+
+  process.on('unhandledRejection', (reason) => {
+    sentry.captureException(reason, { source: 'process.unhandledRejection' });
+    console.error('Unhandled Rejection:', reason);
+  });
+
   startServer().catch((err) => {
+    sentry.captureException(err, { source: 'startServer' });
     console.error('Failed to start Canopy server:', err);
     process.exit(1);
   });

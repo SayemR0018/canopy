@@ -97,4 +97,47 @@ describe('Sentry Monitoring Hook (src/server/sentry.ts & app.ts)', () => {
 
     warnSpy.mockRestore();
   });
+
+  it('normalizes DSN URLs with trailing slashes correctly', () => {
+    const trailingSlashDsn = 'https://key456@o99999.ingest.sentry.io/123456/';
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const sentry = createSentry(trailingSlashDsn);
+    expect(sentry).toBeDefined();
+
+    sentry.captureException(new Error('Trailing slash test'));
+    expect(warnSpy).toHaveBeenCalledWith(
+      '[Sentry Alert] Exception captured:',
+      'Trailing slash test',
+      {}
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it('verifies that startServer in src/server/index.ts wires and returns active Sentry', async () => {
+    const origDsn = process.env.SENTRY_DSN;
+    const dummyDsn = 'https://key123@o12345.ingest.sentry.io/67890';
+    process.env.SENTRY_DSN = dummyDsn;
+
+    const { startServer } = await import('../src/server/index.js');
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const { server, sentry } = await startServer(3888);
+    expect(sentry).toBeDefined();
+
+    // Verify Sentry status and boot message were logged on boot
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('- Sentry: active'));
+    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('[Sentry INFO] Canopy Server running on port 3888'));
+
+    // Clean up server
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    logSpy.mockRestore();
+    if (origDsn) {
+      process.env.SENTRY_DSN = origDsn;
+    } else {
+      delete process.env.SENTRY_DSN;
+    }
+  });
 });
+

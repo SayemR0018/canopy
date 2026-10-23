@@ -19,7 +19,7 @@ export function createSentry(dsn?: string): SentryClient {
   let publicKey: string | null = null;
   try {
     const u = new URL(activeDsn);
-    const projectId = u.pathname.replace(/^\//, '');
+    const projectId = u.pathname.replace(/^\/+|\/+$/g, '');
     publicKey = u.username;
     envelopeUrl = `${u.protocol}//${u.host}/api/${projectId}/envelope/`;
   } catch {
@@ -64,7 +64,6 @@ export function createSentry(dsn?: string): SentryClient {
               {
                 type: err?.name || 'Error',
                 value: err?.message || String(err),
-                stacktrace: err?.stack ? { frames: [] } : undefined,
               },
             ],
           },

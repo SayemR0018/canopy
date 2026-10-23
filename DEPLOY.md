@@ -67,10 +67,11 @@ Target Production URL: **`https://canopy-lazy-git.onrender.com`**
 ## 3. Sentry Integration & Monitoring
 
 When `SENTRY_DSN` is set:
-- **Server Boot**: Canopy logs `- Sentry: active` on startup.
-- **Global Error Handling**: `app.onError` captures unhandled exceptions and dispatches Sentry envelope payloads to Sentry's ingest endpoint (`/api/{projectId}/envelope/`).
-- **Route Error Handling**: Critical endpoints catch errors and forward them via `sentry.captureException(err, { endpoint })`.
-- **Zero-Dependency Fallback**: When `SENTRY_DSN` is not provided, the Sentry client acts as a silent, zero-overhead no-op.
+- **Server Boot & Lifecycle**: `src/server/index.ts` logs `- Sentry: active` on startup and sends an initial info message to Sentry confirming server initialization. It wires top-level process handlers (`uncaughtException`, `unhandledRejection`, and startup failure interception) to ensure unhandled process crashes are immediately captured and dispatched.
+- **Global Error Handling**: `app.onError` in `src/server/app.ts` captures unhandled HTTP route exceptions with request path and method context, dispatching Sentry envelope payloads to Sentry's ingest endpoint (`/api/{projectId}/envelope/`).
+- **Route Error Handling**: Endpoints catch errors and forward them via `sentry.captureException(err, { endpoint })`.
+- **Zero-Dependency Envelope Protocol**: Implements native Sentry Envelope protocol over built-in Node fetch with `X-Sentry-Auth` and `application/x-sentry-envelope`, avoiding external runtime dependencies.
+- **Zero-Overhead Fallback**: When `SENTRY_DSN` is not provided, the Sentry client acts as a silent, zero-overhead no-op.
 
 ---
 

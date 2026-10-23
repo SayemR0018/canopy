@@ -53,11 +53,11 @@ async function runLiveVerification() {
     // Unique revision range to ensure cold execution if needed
     const sinceParam = process.env.CANOPY_DIGEST_SINCE || 'HEAD~15';
 
-    const coldStart = performance.now();
-    const coldRes = await fetch(`${targetUrl}/api/derived/digest?since=${encodeURIComponent(sinceParam)}&lang=en`);
-    const coldLatency = Math.round(performance.now() - coldStart);
-    if (!coldRes.ok) throw new Error(`Cold digest request failed (${coldRes.status})`);
-    const coldData = await coldRes.json();
+    const firstStart = performance.now();
+    const firstRes = await fetch(`${targetUrl}/api/derived/digest?since=${encodeURIComponent(sinceParam)}&lang=en`);
+    const firstLatency = Math.round(performance.now() - firstStart);
+    if (!firstRes.ok) throw new Error(`First digest request failed (${firstRes.status})`);
+    const firstData = await firstRes.json();
 
     const cachedStart = performance.now();
     const cachedRes = await fetch(`${targetUrl}/api/derived/digest?since=${encodeURIComponent(sinceParam)}&lang=en`);
@@ -69,8 +69,12 @@ async function runLiveVerification() {
       throw new Error('Expected second digest request to hit cache (cached: true)');
     }
 
-    console.log(`  ✅ Cold digest latency:   ${coldLatency} ms (Cached: ${coldData.cached})`);
-    console.log(`  ✅ Cached digest latency: ${cachedLatency} ms (Cached: ${cachedData.cached}, Speedup: ${(coldLatency / Math.max(1, cachedLatency)).toFixed(1)}x)`);
+    if (firstData.cached) {
+      console.log(`  ✅ First digest query:    ${firstLatency} ms (Cached: true, pre-warmed in SQLite)`);
+    } else {
+      console.log(`  ✅ Cold digest latency:   ${firstLatency} ms (Cached: false, fresh LLM synthesis)`);
+    }
+    console.log(`  ✅ Cached digest latency: ${cachedLatency} ms (Cached: ${cachedData.cached}, Speedup: ${(firstLatency / Math.max(1, cachedLatency)).toFixed(1)}x)`);
     console.log(`  ✅ Digest Output: "${cachedData.data.line1}"`);
     passedChecks++;
   } catch (err: any) {

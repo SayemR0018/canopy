@@ -99,7 +99,7 @@ async function deploy() {
       },
       {
         key: 'CANOPY_LLM_API_KEY',
-        value: process.env.CANOPY_LLM_API_KEY || '',
+        value: process.env.CANOPY_LLM_API_KEY || process.env.GEMMA_API_KEY || '',
       },
       {
         key: 'SENTRY_DSN',
@@ -169,7 +169,7 @@ async function deploy() {
         console.log(`  ✅ Updated ${updatedKeys.length} environment variables on ${s.service.name}`);
         console.log(`     Configured keys: ${updatedKeys.join(', ')}`);
         console.log(`     SENTRY_DSN configured: ${!!process.env.SENTRY_DSN}`);
-        console.log(`     CANOPY_LLM_API_KEY configured: ${!!process.env.CANOPY_LLM_API_KEY}`);
+        console.log(`     CANOPY_LLM_API_KEY configured: ${!!(process.env.CANOPY_LLM_API_KEY || process.env.GEMMA_API_KEY)}`);
       }
     }
 
@@ -187,6 +187,31 @@ async function deploy() {
         latestDeploy = deploys[0]?.deploy;
       }
 
+      // If deploy is in progress (e.g. building or updating), poll until live
+      const inProgressStatuses = ['created', 'build_in_progress', 'update_in_progress', 'pre_deploy_in_progress'];
+      if (latestDeploy && inProgressStatuses.includes(latestDeploy.status)) {
+        console.log(`  Deploy ${latestDeploy.id} is in progress (${latestDeploy.status}). Polling until live...`);
+        const maxWaitMs = 90000;
+        const pollIntervalMs = 5000;
+        const startTime = Date.now();
+        while (Date.now() - startTime < maxWaitMs) {
+          await new Promise((r) => setTimeout(r, pollIntervalMs));
+          const checkRes = await fetchWithRetry(`https://api.render.com/v1/services/${serviceId}/deploys/${latestDeploy.id}`, { headers });
+          if (checkRes.ok) {
+            const checkData = await checkRes.json();
+            const currentStatus = checkData?.deploy?.status || checkData?.status;
+            console.log(`    Status: ${currentStatus} (${Math.round((Date.now() - startTime) / 1000)}s elapsed)...`);
+            if (currentStatus === 'live') {
+              latestDeploy = checkData?.deploy || checkData;
+              break;
+            }
+            if (currentStatus === 'build_failed' || currentStatus === 'deactivated' || currentStatus === 'canceled') {
+              throw new Error(`Render deploy ${latestDeploy.id} ended in status: ${currentStatus}`);
+            }
+          }
+        }
+      }
+
       const url = s.service.serviceDetails?.url;
       console.log(`  Service: ${s.service.name}`);
       console.log(`  URL:     ${url}`);
@@ -197,7 +222,7 @@ async function deploy() {
 
       if (url) {
         try {
-          const healthRes = await fetchWithRetry(`${url}/healthz`);
+          const healthRes = await fetchWithRetry(`${url}/healthz`, {}, 6, 2500);
           if (healthRes.ok) {
             const health = await healthRes.json();
             console.log(`  Health:  ✅ HTTP 200 OK (uptime: ${health.uptime}s, cache: ${health.cacheEntries})`);
