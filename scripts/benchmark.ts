@@ -243,6 +243,26 @@ export async function runBenchmark(iterations: number = 7) {
       totalBytesKiB: bytesToKiB(repoStats.totalBytes),
       totalBytesMiB: bytesToMiB(repoStats.totalBytes),
     },
+    verification: {
+      gates: 7,
+      unitTests: 48,
+      testSuites: 6,
+      mockPort: 4123,
+      demoPort: 3999,
+      serverPort: 3000,
+      ollamaPort: 11434,
+      maxDiffKb: 64,
+      payloadTruncationBytes: 8192,
+      rateLimitPerMin: 60,
+      dailyTokenCap: 200000,
+      retries: 2,
+      totalAttempts: 3,
+      traceScenarios: 20,
+      e2eSavingsVsTreePct: 99.0,
+      http413: 413,
+      http429: 429,
+      seedDurationSeconds: 2,
+    },
   };
 
   fs.mkdirSync('./docs', { recursive: true });

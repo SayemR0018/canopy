@@ -94,14 +94,19 @@ function extractTableNumbers(markdown: string, sectionHeadingRegex: RegExp): { r
 const readmeContent = fs.readFileSync(path.resolve('./README.md'), 'utf8');
 const postFactsContent = fs.readFileSync(path.resolve('./docs/POST_FACTS.md'), 'utf8');
 
-const readmeClaims = extractTableNumbers(readmeContent, /##\s+Real Benchmark Results/i);
+const readmeClaims = [
+  ...extractTableNumbers(readmeContent, /##\s+Real Benchmark Results/i),
+  ...extractTableNumbers(readmeContent, /##\s+Verification & Testing/i),
+];
 const postFactsClaims = [
   ...extractTableNumbers(postFactsContent, /##\s+1\.\s+Synthetic Repository Characteristics/i),
   ...extractTableNumbers(postFactsContent, /##\s+2\.\s+Bandwidth & Latency Benchmark Results/i),
+  ...extractTableNumbers(postFactsContent, /##\s+3\.\s+Verification Gate Suite Facts/i),
+  ...extractTableNumbers(postFactsContent, /##\s+4\.\s+Models and Engine Configuration/i),
 ];
 
-console.log(`Extracted ${readmeClaims.length} numeric claims from README.md benchmark table.`);
-console.log(`Extracted ${postFactsClaims.length} numeric claims from docs/POST_FACTS.md sections 1 & 2.`);
+console.log(`Extracted ${readmeClaims.length} numeric claims from README.md benchmark & verification sections.`);
+console.log(`Extracted ${postFactsClaims.length} numeric claims from docs/POST_FACTS.md sections 1, 2, 3 & 4.`);
 
 let failedCount = 0;
 

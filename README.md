@@ -28,16 +28,6 @@ Canopy is inspired by the architecture described in Anthropic's public post, *"R
 
 ---
 
-## Deadline and Commit Record
-
-- **Official Challenge Deadline**: October 25, 2026 at 11:59 PM PDT (`2026-10-26T06:59:00Z`).
-- **Initial Start Time**: `2026-10-23T15:37:41Z` (`date -u`).
-- **Completion Time**: `2026-10-23T16:33:00Z` (`date -u`).
-- **Commit Status**: All commits were executed well ahead of the deadline.
-- **DevRelay Status**: [DevRelay](https://devrelay.com) integration verified active (see [DEVRELAY_STATUS.md](DEVRELAY_STATUS.md)).
-
----
-
 ## Architecture
 
 ```mermaid
@@ -200,12 +190,32 @@ npm run trace:demo
 ---
 
 ## Deadline and Commit Record
-- **DEV Challenge**: Hacktoberfest Open-Source AI Challenge Week 3 ("Slow and Steady", Challenge ID 81)
-- **Deadline**: Oct 25, 2026, 11:59 PM PDT (`2026-10-26T06:59:00Z`)
-- **Completion Timestamp**: `2026-10-23T23:05:00Z` (completed ~56 hours ahead of deadline)
+
+- **DEV Challenge**: Hacktoberfest Open-Source AI Challenge Week 3: "Slow and Steady" (Challenge ID 81)
+- **Official Deadline**: Oct 25, 2026, 11:59 PM PDT (`2026-10-26T06:59:00Z`)
+- **Initial Start Time**: `2026-10-23T15:37:41Z` (`date -u`)
+- **Final Hardening Timestamp**: `2026-10-23T23:15:00Z` (`date -u`, completed ~56 hours ahead of deadline)
 - **Live Production URL**: [https://canopy-lazy-git.onrender.com](https://canopy-lazy-git.onrender.com)
 - **DEV Draft URL**: [Edit Draft on DEV](https://dev.to/rahmansayem163/canopy-rewarding-laziness-in-git-workflows-with-on-demand-slices-and-semantic-caching-1pom-temp-slug-2457033/edit)
 - **GitHub Repository**: [https://github.com/SayemR0018/canopy](https://github.com/SayemR0018/canopy)
+- **Sentry Trace Inspection**: To inspect live GenAI agent traces, navigate to **Explore > Agents** in the Sentry dashboard.
+
+### Milestone Commit Record
+
+| Commit | Timestamp (UTC) | Milestone | Description |
+| :--- | :--- | :--- | :--- |
+| `1d2e4b8` | `2026-10-23T22:59:58Z` | Final Gate | Update verification gates and add deadline and commit record |
+| `ed0183e` | `2026-10-23T22:57:08Z` | P7 | DEV post rewrite with real benchmarks, what went wrong, and devrelay mcp draft |
+| `77ca65c` | `2026-10-23T22:53:42Z` | P6 | Record tinker skip decision per missing secret protocol |
+| `3eb4ad6` | `2026-10-23T22:53:02Z` | P5 | Ollama verification script, graceful offline detection, and docs/ollama-results.json |
+| `a69b1a5` | `2026-10-23T22:51:09Z` | P4 | Sentry OpenTelemetry GenAI agent tracing, privacy scrubbing, and trace demo generator |
+| `6095ead` | `2026-10-23T22:45:20Z` | P3 | GitHub category workflows, copilot instructions, PR template, and good first issues |
+| `b046d40` | `2026-10-23T22:43:08Z` | P2 | Cold-start fix with Gemma bakeoff, background cache warmer, and timeouts |
+| `d1dd2a3` | `2026-10-23T22:24:43Z` | P1 | Implement per-directory manifest slices and check-claims audit suite |
+| `d401aac` | `2026-10-23T22:12:08Z` | P0 | Re-check DevRelay and verify week 3 challenge active |
+| `9fb65b8` | `2026-10-23T21:40:31Z` | M8 Fix | Batch concurrent requests in verify:live to reliably trigger 429 over WAN |
+| `f3cad32` | `2026-10-23T21:35:47Z` | M7 Fix | Wire process-level Sentry hooks in server/index.ts, poll in-progress deploys |
+| `402fb62` | `2026-10-23T21:16:39Z` | M7 | Orchestrate Render deployment via REST API and integrate Sentry monitoring |
 
 ---
 

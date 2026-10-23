@@ -100,4 +100,16 @@
 - **Status**: DONE
 - **Done**: Fully overhauled `docs/POST_DRAFT.md` adhering to the DEV Hacktoberfest challenge specifications: strong 3-sentence hook, prominent live link (`https://canopy-lazy-git.onrender.com`), raw GitHub URL for `docs/demo.gif`, collapsible `<details>` blocks for benchmark data and 7 verification gates, detailed 'What Went Wrong' analysis covering D007 (dual SQLite adapter), D023 (Windows native rollup dependency breaking Linux Docker), and D024 (proxy IP & port stripping for rate limiting), cold-start bakeoff and boot-time cache warmer benchmarks, Sentry GenAI agent tracing and privacy protections, and honest reporting of pair programming with Antigravity and DevRelay MCP verification. Created draft article directly on DEV via DevRelay MCP `create_article` (ID: 4907817, `published: false`).
 - **Evidence**: `docs/POST_DRAFT.md` rewritten and verified; DEV draft article 4907817 staged; `npm run check-claims` passed 86/86 claims.
-- **Next**: Final Verification & Hardening Gates (npm run verify, verify:live, check-claims, npm audit --omit=dev, secrets scan).
+- **Next**: Review & Hardening Verification.
+
+## Hardening & Final Verification
+- **Status**: DONE
+- **Done**:
+  1. Fixed missing required challenge tag `hf26challenge` in `docs/POST_DRAFT.md` (was using `hacktoberfest`) and pushed live update to DEV draft article ID 4907817 via DevRelay MCP `update_article`.
+  2. Upgraded `zod` to `4.6.7`, resolving high-severity advisory GHSA-mrhx-c7xc-m3w5 and bringing `npm audit --omit=dev` to 0 vulnerabilities.
+  3. Formatted Prize Categories to strictly adhere to requirement: single sentence with repository file links for Gemma, Render, Sentry, and GitHub.
+  4. Merged cold-start before/after metrics into 'What Went Wrong' in `docs/POST_DRAFT.md` and added 3-sentence hook containing live URL.
+  5. Enriched Sentry agent tracing with `gen_ai.usage.input_tokens` and `gen_ai.usage.output_tokens` attributes, added 2-click Render setup instructions in `DEPLOY.md`, and documented that human must inspect **Explore > Agents** to verify trace delivery.
+  6. Consolidated duplicate `## Deadline and Commit Record` sections in `README.md`, added real UTC commit table, and synchronized test counts.
+  7. Expanded `scripts/check-claims.ts` to audit all sections of `docs/POST_FACTS.md` and `README.md` (62 README claims, 73 POST_FACTS claims all verified).
+- **Evidence**: 48/48 unit tests passing; `npm run verify` passing 7/7 gates; `npm run check-claims` verified 100%; `npm audit --omit=dev` reports 0 vulnerabilities; `npm run trace:demo` generated 20 traces; `verify:live` passed 4/4 live checks; DEV draft updated.

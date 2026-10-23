@@ -161,6 +161,8 @@ export function createSentry(dsn?: string): SentryClient {
                 'gen_ai.request.model': trace.model,
                 'gen_ai.usage.prompt_tokens': trace.tokensIn,
                 'gen_ai.usage.completion_tokens': trace.tokensOut,
+                'gen_ai.usage.input_tokens': trace.tokensIn,
+                'gen_ai.usage.output_tokens': trace.tokensOut,
                 'gen_ai.usage.total_tokens': trace.tokensIn + trace.tokensOut,
                 'canopy.cache_hit': trace.cacheHit,
                 'canopy.retry_count': trace.retries ?? 0,
