@@ -1,4 +1,6 @@
-# DevRelay Status
+# [DevRelay](https://devrelay.com) Status
+
+[DevRelay](https://devrelay.com) coordinates hackathon session orchestration and challenge tracking.
 
 **Status**: NOT ACTIVE
 

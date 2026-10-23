@@ -2,7 +2,7 @@
 
 ## M0: Scaffold
 - **Status**: DONE
-- **Done**: Initialized repository, Git remote linked to public GitHub repo, .gitignore and .env.example created, DEVRELAY_STATUS documented, DECISIONS log created, TypeScript/tsx/vitest set up, database adapter implemented.
+- **Done**: Initialized repository, Git remote linked to public GitHub repo, .gitignore and .env.example created, [DEVRELAY_STATUS.md](DEVRELAY_STATUS.md) documented with [DevRelay](https://devrelay.com), DECISIONS log created, TypeScript/tsx/vitest set up, database adapter implemented.
 - **Evidence**: `npx vitest --version` (2.1.9) passes; SQLite dual adapter verified; repo initialized on branch main.
 - **Next**: Milestone 1 - Seed + Server (deterministic synthetic monorepo, Hono API for tree, file, log, blame).
 
