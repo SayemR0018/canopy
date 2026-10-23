@@ -38,7 +38,11 @@ export function createApp(config: AppConfig) {
 
   // Rate limiting middleware for all /api/* routes
   app.use('/api/*', async (c, next) => {
-    const ip = c.req.header('x-forwarded-for') || c.req.header('cf-connecting-ip') || '127.0.0.1';
+    const rawIp =
+      c.req.header('cf-connecting-ip') ||
+      c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+      '127.0.0.1';
+    const ip = rawIp.replace(/:\d+$/, '');
     const now = Date.now();
     let record = ipRateMap.get(ip);
 

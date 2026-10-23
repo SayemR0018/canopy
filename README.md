@@ -161,7 +161,7 @@ Run the end-to-end automated verification gate suite:
 npm run verify
 ```
 This runs 6 verification gates:
-1. Vitest unit and integration tests (37 tests).
+1. Vitest unit and integration tests (38 tests).
 2. Spawns tiny mock LLM server speaking `/v1/chat/completions`.
 3. Seeds clean synthetic repository.
 4. Boots Canopy server on ephemeral port.

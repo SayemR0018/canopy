@@ -143,4 +143,43 @@ describe('Canopy API Server (M1)', () => {
     expect(body.totalFiles).toBe(3000);
     expect(body.totalBytes).toBeGreaterThan(500000);
   });
+
+  it('enforces rate limiting and parses cf-connecting-ip and x-forwarded-for behind proxies', async () => {
+    const limitedApp = createApp({
+      gitService: {
+        getTree: async () => [{ name: 'test', type: 'blob', path: 'test', size: 10, hash: 'abc' }],
+      } as any,
+      db: null,
+      rateLimitPerMin: 5,
+    });
+
+    const clientIp = '203.0.113.195';
+    for (let i = 0; i < 5; i++) {
+      const res = await limitedApp.request('/api/tree', {
+        headers: {
+          'x-forwarded-for': `${clientIp}:54321, 172.68.1.1`,
+        },
+      });
+      expect(res.status).toBe(200);
+    }
+
+    // 6th request from same client IP (different ephemeral port or downstream proxy) should hit 429
+    const limitedRes = await limitedApp.request('/api/tree', {
+      headers: {
+        'x-forwarded-for': `${clientIp}:54322, 172.68.1.2`,
+      },
+    });
+    expect(limitedRes.status).toBe(429);
+    const body = await limitedRes.json();
+    expect(body.error).toContain('Rate limit exceeded');
+
+    // Different client IP with cf-connecting-ip should succeed
+    const distinctRes = await limitedApp.request('/api/tree', {
+      headers: {
+        'cf-connecting-ip': '198.51.100.42',
+      },
+    });
+    expect(distinctRes.status).toBe(200);
+  });
 });
+

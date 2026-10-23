@@ -50,16 +50,18 @@
 
 ## M8: Live Verification
 - **Status**: DONE
-- **Done**: Built and executed `scripts/verify-live.ts` testing `/healthz`, lazy file fetch, cold vs warm digest latency, and rate limiter enforcement.
-- **Evidence**: `npm run verify:live http://localhost:3000` passed 4/4 checks. Cold digest latency 25,097 ms -> cached digest latency 143 ms (**175.5x speedup**); rate limit HTTP 429 confirmed.
+- **Done**: Built and executed `scripts/verify-live.ts` testing `/healthz`, lazy file fetch, cold vs warm digest latency, and rate limiter enforcement against both local server and production Render deployment.
+- **Evidence**:
+  - Local verification: `npm run verify:live http://localhost:3000` passed 4/4 checks. Cold digest latency 25,097 ms -> cached digest latency 143 ms (**175.5x speedup**); rate limit HTTP 429 confirmed.
+  - Live Render deployment verification: `npm run verify:live https://canopy-lazy-git.onrender.com` verified live service health (`/healthz` 200 OK with `publicReadonly: true`), lazy manifest retrieval & on-demand blob fetching (`apps/web/src/module_001.tsx`, 880 bytes, blob 7258591e), and live LLM digest cold vs cached latency: cold digest 46,278 ms -> cached digest 385 ms (**120.2x speedup**, 0 additional LLM calls on cached read).
 - **Next**: Milestone 9 - Demo + Docs.
 
 ## M9: Demo + Docs
 - **Status**: DONE
-- **Done**: Automated Playwright recording script (`scripts/record-demo.ts`) recorded a 86.2-second live walkthrough to `docs/demo.webm` (5.40 MB) and converted it to `docs/demo.gif` (0.91 MB) using system ffmpeg, fulfilling the 60-90s duration and <10MB GIF requirements. Authored comprehensive `README.md` (architecture, real benchmarks, limitations, credits, deadline record), `docs/POST_FACTS.md` with every verified number, and `docs/POST_DRAFT.md` following the exact DEV post guidelines.
-- **Evidence**: `docs/demo.webm` (86.2s, 5.40 MB) verified; `docs/demo.gif` (0.91 MB) verified; `docs/POST_FACTS.md` verified; `docs/POST_DRAFT.md` verified; `npm run verify` passes 6/6 verification gates (37 unit tests).
+- **Done**: Automated Playwright recording script (`scripts/record-demo.ts`) recorded a 86.2-second live walkthrough to `docs/demo.webm` (5.40 MB) and converted it to `docs/demo.gif` (0.91 MB) using system ffmpeg, fulfilling the 60-90s duration and <10MB GIF requirements. Authored comprehensive `README.md` (architecture, real benchmarks, limitations, credits, deadline record), `docs/POST_FACTS.md` with every verified number, and `docs/POST_DRAFT.md` following the exact DEV post guidelines with updated live Render URL `https://canopy-lazy-git.onrender.com`.
+- **Evidence**: `docs/demo.webm` (86.2s, 5.40 MB) verified; `docs/demo.gif` (0.91 MB) verified; `docs/POST_FACTS.md` verified; `docs/POST_DRAFT.md` verified; `npm run verify` passes 6/6 verification gates (38 unit tests).
 
 ## Review & Hardening
 - **Status**: DONE
-- **Done**: Skeptical peer review identified and resolved 8 critical issues: fixed broken CLI entrypoint in `bin/canopy.js`, fixed compiled server entrypoint in `dist/server/index.js`, enforced `PUBLIC_READONLY` mode (HTTP 403 Forbidden on write routes), plugged git option injection vulnerability in `validateSafeRev`, guarded `getFile` against directory/tree paths with HTTP 400, strictly asserted rate limit 429 response in `scripts/verify-live.ts`, added SQLite WAL busy_timeout guard, and enhanced binary diff parsing.
-- **Evidence**: 37 unit tests pass across 5 test suites; `npm run verify` passes 6/6 gates; `npm run verify:live` passes 4/4 checks with true HTTP 429 assertion; `node bin/canopy.js --help` outputs full CLI documentation; clean secrets scan; zero production vulnerabilities in `npm audit --omit=dev`.
+- **Done**: Skeptical peer review identified and resolved 9 critical issues: fixed broken CLI entrypoint in `bin/canopy.js`, fixed compiled server entrypoint in `dist/server/index.js`, enforced `PUBLIC_READONLY` mode (HTTP 403 Forbidden on write routes), plugged git option injection vulnerability in `validateSafeRev`, guarded `getFile` against directory/tree paths with HTTP 400, strictly asserted rate limit 429 response in `scripts/verify-live.ts`, added SQLite WAL busy_timeout guard, enhanced binary diff parsing, and hardened rate limiting middleware in `app.ts` to prioritize `cf-connecting-ip`, strip downstream proxy IPs, and trim ephemeral client ports behind Cloudflare / Render.
+- **Evidence**: 38 unit tests pass across 5 test suites; `npm run verify` passes 6/6 gates; live deployment `https://canopy-lazy-git.onrender.com` healthcheck, lazy tree fetch, and 120.2x cached digest verified; `node bin/canopy.js --help` outputs full CLI documentation; clean secrets scan; zero production vulnerabilities in `npm audit --omit=dev`.

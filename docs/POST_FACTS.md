@@ -44,7 +44,7 @@ Measured by `scripts/benchmark.ts` comparing a standard git clone against Canopy
 
 Automated verification suite `scripts/verify.ts` runs 6 sequential verification gates from a clean environment:
 
-1. **Unit & Integration Suite**: 37 passed in 3.01s (`vitest run`).
+1. **Unit & Integration Suite**: 38 passed in 3.08s (`vitest run`).
 2. **Mock LLM Server**: Local HTTP server listening on `http://localhost:4123/v1` speaking `/v1/chat/completions`.
 3. **Synthetic Bare Seed**: 3,000 files across 40 directories and 200 commits generated in under 2 seconds.
 4. **Server Boot**: In-process Hono server initialized with dual SQLite WAL cache on port `3999`.

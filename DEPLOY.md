@@ -6,7 +6,7 @@ Canopy is fully packaged for Render using Docker (`Dockerfile`) and an Infrastru
 
 ## 1. Exact Settings for Existing Render Web Service (`canopy`)
 
-If you created your Web Service directly in Render (e.g. `srv-dbdpo459fdbs73884p2g` / `https://canopy-bo6m.onrender.com`):
+If you created your Web Service directly in Render (e.g. `https://canopy-lazy-git.onrender.com`):
 
 ### **General / Build & Deploy Settings**
 | Setting Field | Exact Value |
