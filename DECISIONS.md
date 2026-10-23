@@ -24,4 +24,5 @@
 - D022: Upgraded Dockerfile to node:22-slim with built-in node:sqlite (--experimental-sqlite), bound HTTP listener explicitly to 0.0.0.0, pre-seeded synthetic repo at Docker build time (<50ms boot), and added .dockerignore.
 - D023: Removed platform-locked @rollup/rollup-win32-x64-msvc from devDependencies (causing EBADPLATFORM on Linux npm install), omitted optional native builds in Docker, added npm prune --omit=dev, set Node >=22.5.0 in package.json engines, and configured DATA_DIR=/app/data in render.yaml.
 - D024: Hardened per-IP rate limiting middleware in app.ts to prioritize cf-connecting-ip, strip downstream proxy IPs from x-forwarded-for, and strip ephemeral client ports to ensure robust HTTP 429 rate limit enforcement behind Cloudflare and Render reverse proxies.
+- D025: Verified DevRelay gateway via MCP get_challenges; call succeeded and retrieved active Week 3 challenge (ID 81), confirming ACTIVE status.
 

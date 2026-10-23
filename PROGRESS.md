@@ -65,3 +65,9 @@
 - **Status**: DONE
 - **Done**: Skeptical peer review identified and resolved 10 critical issues: fixed broken CLI entrypoint in `bin/canopy.js`, fixed compiled server entrypoint in `dist/server/index.js`, enforced `PUBLIC_READONLY` mode (HTTP 403 Forbidden on write routes), plugged git option injection vulnerability in `validateSafeRev`, guarded `getFile` against directory/tree paths with HTTP 400, strictly asserted rate limit 429 response in `scripts/verify-live.ts`, added SQLite WAL busy_timeout guard, enhanced binary diff parsing, hardened rate limiting middleware in `app.ts` to prioritize `cf-connecting-ip`, strip downstream proxy IPs, and trim ephemeral client ports behind Cloudflare / Render, and switched `scripts/verify-live.ts` to batched concurrent bursting to prevent WAN latency stretching across the 60-second rate limiter window.
 - **Evidence**: 44 unit tests pass across 6 test suites; `npm run verify` passes 6/6 gates; live deployment `https://canopy-lazy-git.onrender.com` passed 4/4 checks (healthcheck, lazy tree fetch, cold 67.5s vs 166ms cached digest speedup, and HTTP 429 rate limiting verified); `node bin/canopy.js --help` outputs full CLI documentation; clean secrets scan; zero production vulnerabilities in `npm audit --omit=dev`.
+
+## P0: DevRelay Re-Check
+- **Status**: DONE
+- **Done**: Executed read-only get_challenges via MCP; verified response returned challenge ID 81 (Hacktoberfest Week 3, ends 2026-10-25T06:59:00Z). Updated DEVRELAY_STATUS.md to ACTIVE.
+- **Evidence**: `devrelay-gateway/get_challenges` returned 34.4 KB JSON payload containing challenge 81.
+- **Next**: P1 - Claims Audit and Fixes.
