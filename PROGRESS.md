@@ -7,8 +7,10 @@
 - **Next**: Milestone 1 - Seed + Server (deterministic synthetic monorepo, Hono API for tree, file, log, blame).
 
 ## M1: Seed + Server
-- **Status**: PENDING
-- **Next**: scripts/seed.ts for deterministic synthetic monorepo (~3000 files, ~40 dirs, ~200 commits in bare repo), Hono API routes for tree, file, log, blame with traversal protection.
+- **Status**: DONE
+- **Done**: scripts/seed.ts generates deterministic synthetic monorepo (Mulberry32 PRNG seed 1337, 3000 files, 40 dirs, 200 commits in ./data/repo.git). Hono API server implements /healthz, /api/tree, /api/file, /api/log, /api/blame, /api/stats with strict path traversal validation.
+- **Evidence**: Vitest unit/integration tests pass (7 git tests + 8 server tests); path traversal attempts blocked with 400.
+- **Next**: Milestone 2 - Lazy Client (`canopy` CLI: mount, cat/open with local cache, stats; benchmark script).
 
 ## M2: Lazy Client
 - **Status**: PENDING
