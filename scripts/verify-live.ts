@@ -88,18 +88,21 @@ async function runLiveVerification() {
     let hitRateLimit = false;
     let rateLimitStatus = 0;
 
-    // Send rapid requests until exceeding standard 60 req/min limit
-    for (let i = 1; i <= 80; i++) {
-      try {
-        const res = await fetch(`${targetUrl}/api/tree`);
-        if (res.status === 429) {
+    // Send rapid concurrent burst until exceeding standard 60 req/min limit
+    const batchSize = 15;
+    for (let batch = 0; batch < 6; batch++) {
+      const promises = Array.from({ length: batchSize }, () =>
+        fetch(`${targetUrl}/api/tree`).catch(() => null)
+      );
+      const responses = await Promise.all(promises);
+      for (const res of responses) {
+        if (res && res.status === 429) {
           hitRateLimit = true;
           rateLimitStatus = 429;
           break;
         }
-      } catch {
-        // Ignore transient socket churn on rapid connections
       }
+      if (hitRateLimit) break;
     }
 
     if (!hitRateLimit) {
