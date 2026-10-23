@@ -2,6 +2,21 @@ import crypto from 'node:crypto';
 import { z } from 'zod';
 import type { DatabaseAdapter } from '../db/index.js';
 import { OpenAICompatibleClient, type LLMResponse } from './llm.js';
+import type { SentryClient, GenAiTraceData } from './sentry.js';
+
+export function getAgentName(kind: string): GenAiTraceData['agentName'] {
+  switch (kind) {
+    case 'digest':
+      return 'CanopyDigestAgent';
+    case 'why':
+      return 'CanopyWhyAgent';
+    case 'commit':
+      return 'CanopyCommitAgent';
+    case 'summary':
+    default:
+      return 'CanopySummaryAgent';
+  }
+}
 
 export const SummarySchema = z.object({
   summary: z.string().min(5),
@@ -94,6 +109,7 @@ export class DerivedService {
   private db: DatabaseAdapter;
   private llmClient: OpenAICompatibleClient;
   private dailyTokenCap: number;
+  private sentry?: SentryClient;
 
   // In-memory counters for live trace metrics
   private metricsState = {
@@ -106,10 +122,16 @@ export class DerivedService {
     totalLatencyMs: 0,
   };
 
-  constructor(db: DatabaseAdapter, llmClient?: OpenAICompatibleClient, dailyTokenCap: number = 200000) {
+  constructor(
+    db: DatabaseAdapter,
+    llmClient?: OpenAICompatibleClient,
+    dailyTokenCap: number = 200000,
+    sentry?: SentryClient
+  ) {
     this.db = db;
     this.llmClient = llmClient || new OpenAICompatibleClient();
     this.dailyTokenCap = dailyTokenCap;
+    this.sentry = sentry;
     this.initTables();
   }
 
@@ -250,6 +272,7 @@ export class DerivedService {
     this.metricsState.totalRequests += 1;
     const promptVersion = this.getPromptVersion(kind);
     const model = this.llmClient.model;
+    const agentName = getAgentName(kind);
 
     // Check Cache
     const cached = this.getCachedRecord(blobHash, kind, lang);
@@ -261,6 +284,20 @@ export class DerivedService {
       } catch {
         parsed = JSON.parse(cached.output);
       }
+      this.sentry?.recordGenAiSpan({
+        agentName,
+        kind,
+        model,
+        system: 'gemma',
+        blobHash,
+        lang,
+        tokensIn: 0,
+        tokensOut: 0,
+        latencyMs: 0,
+        cacheHit: true,
+        retries: 0,
+        isDegraded: Boolean(cached.is_degraded),
+      });
       return {
         cached: true,
         data: parsed,
@@ -294,6 +331,20 @@ export class DerivedService {
         latency_ms: 0,
         is_degraded: 1,
       });
+      this.sentry?.recordGenAiSpan({
+        agentName,
+        kind,
+        model,
+        system: 'gemma',
+        blobHash,
+        lang,
+        tokensIn: 0,
+        tokensOut: 0,
+        latencyMs: 0,
+        cacheHit: false,
+        retries: 0,
+        isDegraded: true,
+      });
       return {
         cached: false,
         data: fallbackData,
@@ -323,7 +374,9 @@ export class DerivedService {
       { role: 'user' as const, content: safeUserPrompt },
     ];
 
+    let attemptsMade = 0;
     for (let attempt = 0; attempt <= 2; attempt++) {
+      attemptsMade++;
       try {
         const response: LLMResponse = await this.llmClient.chat(messages, {
           temperature: attempt === 0 ? 0.1 : 0.2 * attempt,
@@ -399,6 +452,21 @@ export class DerivedService {
       tokens_out: totalTokensOut,
       latency_ms: totalLatency,
       is_degraded: isDegraded ? 1 : 0,
+    });
+
+    this.sentry?.recordGenAiSpan({
+      agentName,
+      kind,
+      model,
+      system: 'gemma',
+      blobHash,
+      lang,
+      tokensIn: totalTokensIn,
+      tokensOut: totalTokensOut,
+      latencyMs: totalLatency,
+      cacheHit: false,
+      retries: Math.max(0, attemptsMade - 1),
+      isDegraded,
     });
 
     return {

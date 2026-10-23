@@ -28,7 +28,7 @@ export function createApp(config: AppConfig) {
   // Initialize or use provided DerivedService if database exists
   let derivedService = config.derivedService;
   if (!derivedService && config.db) {
-    derivedService = new DerivedService(config.db, undefined, config.dailyTokenCap ?? 200000);
+    derivedService = new DerivedService(config.db, undefined, config.dailyTokenCap ?? 200000, sentry);
   }
 
   app.use('*', cors());

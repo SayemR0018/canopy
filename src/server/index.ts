@@ -66,7 +66,7 @@ async function startServer(overridePort?: number, overrideHost?: string) {
 
   const sentry = createSentry(process.env.SENTRY_DSN);
 
-  const derivedService = new DerivedService(db, undefined, DAILY_TOKEN_CAP);
+  const derivedService = new DerivedService(db, undefined, DAILY_TOKEN_CAP, sentry);
 
   const app = createApp({
     gitService,

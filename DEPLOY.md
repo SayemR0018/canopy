@@ -64,10 +64,13 @@ Target Production URL: **`https://canopy-lazy-git.onrender.com`**
 
 ---
 
-## 3. Sentry Integration & Monitoring
+## 3. Sentry Integration, GenAI Tracing & Privacy
 
 When `SENTRY_DSN` is set:
 - **Server Boot & Lifecycle**: `src/server/index.ts` logs `- Sentry: active` on startup and sends an initial info message to Sentry confirming server initialization. It wires top-level process handlers (`uncaughtException`, `unhandledRejection`, and startup failure interception) to ensure unhandled process crashes are immediately captured and dispatched.
+- **OpenTelemetry GenAI Agent Tracing**: Every LLM call and cache transaction is tracked across four dedicated agents (`CanopyDigestAgent`, `CanopyWhyAgent`, `CanopyCommitAgent`, `CanopySummaryAgent`) following OpenTelemetry semantic conventions (`gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.prompt_tokens`, `gen_ai.usage.completion_tokens`, `canopy.cache_hit`, `canopy.retry_count`, `canopy.is_degraded`, latency).
+- **Strict Developer Privacy & Scrubbing**: Client IP addresses are never transmitted or stored (`user.ip_address: undefined`), and repository diffs and request payloads are scrubbed prior to dispatch to preserve code confidentiality.
+- **Trace Demo Generator**: Run `npm run trace:demo` (`scripts/trace-demo.ts`) to simulate and record 20 varied real-world scenarios (cold misses, warm zero-call hits, Bengali translations, retry recoveries, and degraded fallbacks) directly into Sentry.
 - **Global Error Handling**: `app.onError` in `src/server/app.ts` captures unhandled HTTP route exceptions with request path and method context, dispatching Sentry envelope payloads to Sentry's ingest endpoint (`/api/{projectId}/envelope/`).
 - **Route Error Handling**: Endpoints catch errors and forward them via `sentry.captureException(err, { endpoint })`.
 - **Zero-Dependency Envelope Protocol**: Implements native Sentry Envelope protocol over built-in Node fetch with `X-Sentry-Auth` and `application/x-sentry-envelope`, avoiding external runtime dependencies.

@@ -139,5 +139,55 @@ describe('Sentry Monitoring Hook (src/server/sentry.ts & app.ts)', () => {
       delete process.env.SENTRY_DSN;
     }
   });
+
+  it('records GenAI agent traces with OpenTelemetry semantic conventions', () => {
+    const dummyDsn = 'https://key123@o12345.ingest.sentry.io/67890';
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+    const sentry = createSentry(dummyDsn);
+    sentry.recordGenAiSpan({
+      agentName: 'CanopyDigestAgent',
+      kind: 'digest',
+      model: 'models/gemma-4-26b-a4b-it',
+      system: 'gemma',
+      blobHash: 'abc123hash',
+      lang: 'en',
+      tokensIn: 340,
+      tokensOut: 65,
+      latencyMs: 13700,
+      cacheHit: false,
+      retries: 0,
+      isDegraded: false,
+    });
+
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[Sentry GenAI Trace] agent=CanopyDigestAgent model=models/gemma-4-26b-a4b-it cache_hit=false latency=13700ms tokens=340/65')
+    );
+
+    logSpy.mockRestore();
+  });
+
+  it('scrubs client IPs and large request bodies from captured contexts', () => {
+    const dummyDsn = 'https://key123@o12345.ingest.sentry.io/67890';
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const sentry = createSentry(dummyDsn);
+    sentry.captureException(new Error('Privacy check'), {
+      client_ip: '198.51.100.42',
+      ip: '203.0.113.1',
+      diff: 'a'.repeat(200),
+      small_meta: 'safe',
+    });
+
+    expect(warnSpy).toHaveBeenCalled();
+    const scrubbedContext = warnSpy.mock.calls[0][2];
+    expect(scrubbedContext.client_ip).toBeUndefined();
+    expect(scrubbedContext.ip).toBeUndefined();
+    expect(scrubbedContext.diff).toContain('[SCRUBBED_200_BYTES]');
+    expect(scrubbedContext.small_meta).toBe('safe');
+
+    warnSpy.mockRestore();
+  });
 });
+
 
