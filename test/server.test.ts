@@ -41,6 +41,14 @@ describe('Canopy API Server (M1)', () => {
     });
   }, 30000);
 
+  it('GET / returns HTML Web UI (M5)', async () => {
+    const res = await app.request('/');
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('Canopy');
+    expect(html).toContain('Digest');
+  });
+
   it('GET /healthz returns 200 ok', async () => {
     const res = await app.request('/healthz');
     expect(res.status).toBe(200);

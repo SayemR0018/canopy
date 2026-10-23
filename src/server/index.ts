@@ -5,7 +5,7 @@ import path from 'node:path';
 import { createApp } from './app.js';
 import { GitService } from './git.js';
 import { openDatabase } from '../db/index.js';
-import { seedRepository } from '../../scripts/seed.js';
+import { seedRepository } from '../seed.js';
 
 dotenv.config();
 

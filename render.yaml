@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: canopy
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: PUBLIC_READONLY
+        value: "true"
+      - key: RATE_LIMIT_PER_MIN
+        value: "60"
+      - key: DAILY_TOKEN_CAP
+        value: "200000"
+      - key: CANOPY_LLM_BASE_URL
+        value: https://generativelanguage.googleapis.com/v1beta/openai
+      - key: CANOPY_LLM_MODEL
+        value: models/gemma-4-26b-a4b-it
+      - key: CANOPY_LLM_API_KEY
+        sync: false

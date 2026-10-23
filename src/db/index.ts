@@ -1,5 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const req = createRequire(import.meta.url);
 
 export interface RunResult {
   changes: number;
@@ -27,17 +30,13 @@ export function openDatabase(dbPath: string): DatabaseAdapter {
 
   // Try better-sqlite3 first if available
   try {
-    // Dynamic require so module resolution doesn't break if absent
-    const { createRequire } = require('node:module');
-    const req = createRequire(import.meta.url);
     const BetterSqlite3 = req('better-sqlite3');
     const db = new BetterSqlite3(dbPath);
     db.pragma('journal_mode = WAL');
     return db;
   } catch {
     // Fall back to built-in node:sqlite
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { DatabaseSync } = require('node:sqlite');
+    const { DatabaseSync } = req('node:sqlite');
     const db = new DatabaseSync(dbPath);
     db.exec('PRAGMA journal_mode = WAL;');
 

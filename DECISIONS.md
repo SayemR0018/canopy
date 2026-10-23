@@ -10,3 +10,8 @@
 - D008: Validated LLM outputs using strict Zod schemas with 2 retries, falling back to deterministic heuristic parsing flagged is_degraded=1 to guarantee zero downtime.
 - D009: Implemented `canopy digest` enforcing exactly two lines + risk flags, and added bilingual support (English and Bengali via --lang bn).
 - D010: Added 64KB diff input limit and 8KB context window truncation with user notice to prevent LLM context exhaustion.
+- D011: Served responsive light/dark Web UI directly from Hono server without heavy SPA frameworks to enable zero-build client delivery and instant cold boots on Render.
+- D012: Enforced 60 req/min per-IP rate limiting and a 200,000 daily token cap with automated degradation to protect production demo API quotas.
+- D013: Packaged application in multi-stage Docker container with auto-seeding on boot in ~1.5s, satisfying Render's sub-60s boot health requirement.
+- D014: Authored Infrastructure-as-Code Blueprint (`render.yaml`) and exact 3-click manual deployment guide (`DEPLOY.md`) as standard fallback protocol.
+- D015: Automated live verification suite (`scripts/verify-live.ts`) validating `/healthz`, lazy file fetch, 175.5x cold vs warm digest speedup, and rate limit response.

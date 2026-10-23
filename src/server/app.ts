@@ -4,6 +4,7 @@ import { GitService } from './git.js';
 import type { DatabaseAdapter } from '../db/index.js';
 import { DerivedService } from './derived.js';
 import { createSentry } from './sentry.js';
+import { renderCanopyHtml } from './ui.js';
 
 export interface AppConfig {
   gitService: GitService;
@@ -57,6 +58,11 @@ export function createApp(config: AppConfig) {
     }
 
     await next();
+  });
+
+  // Web UI endpoint (M5)
+  app.get('/', (c) => {
+    return c.html(renderCanopyHtml());
   });
 
   // /healthz endpoint

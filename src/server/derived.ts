@@ -244,7 +244,7 @@ export class DerivedService {
     lang?: string;
     systemPrompt: string;
     userPrompt: string;
-    schema: z.ZodSchema<T>;
+    schema: z.ZodType<T, any, any>;
     heuristicFallback: () => T;
   }): Promise<DerivedResult<T>> {
     this.metricsState.totalRequests += 1;
