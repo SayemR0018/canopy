@@ -10,6 +10,7 @@ import { seedRepository } from '../seed.js';
 dotenv.config();
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
+const HOST = process.env.HOST || '0.0.0.0';
 const DATA_DIR = process.env.DATA_DIR || './data';
 const PUBLIC_READONLY = process.env.PUBLIC_READONLY === 'true';
 const RATE_LIMIT_PER_MIN = parseInt(process.env.RATE_LIMIT_PER_MIN || '60', 10);
@@ -71,9 +72,10 @@ async function startServer() {
     {
       fetch: app.fetch,
       port: PORT,
+      hostname: HOST,
     },
     (info) => {
-      console.log(`🌲 Canopy Server running on http://localhost:${info.port}`);
+      console.log(`🌲 Canopy Server running on http://${HOST}:${info.port}`);
       console.log(`- Data Directory: ${DATA_DIR}`);
       console.log(`- Bare Repo: ${repoPath}`);
       console.log(`- Public Readonly: ${PUBLIC_READONLY}`);

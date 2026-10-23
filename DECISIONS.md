@@ -21,3 +21,4 @@
 - D019: Enforced public read-only mode (PUBLIC_READONLY) by returning HTTP 403 Forbidden on write/mutation endpoints.
 - D020: Fixed CLI binary entrypoint in bin/canopy.js and server compiled entrypoint in dist/server/index.js with robust main module detection.
 - D021: Re-recorded demo walkthrough to 86.2 seconds and generated 0.91 MB demo.gif using system ffmpeg, fulfilling 60-90s duration and <10MB GIF requirements.
+- D022: Upgraded Dockerfile to node:22-slim with built-in node:sqlite (--experimental-sqlite), bound HTTP listener explicitly to 0.0.0.0, pre-seeded synthetic repo at Docker build time (<50ms boot), and added .dockerignore.
