@@ -164,17 +164,28 @@ Run the end-to-end automated verification gate suite:
 ```bash
 npm run verify
 ```
-This runs 6 verification gates:
-1. Vitest unit and integration tests (38 tests).
-2. Spawns tiny mock LLM server speaking `/v1/chat/completions`.
-3. Seeds clean synthetic repository.
-4. Boots Canopy server on ephemeral port.
-5. Verifies 5-file fetch achieves > 60% bandwidth reduction.
-6. Verifies second digest run makes 0 LLM calls (cache hit) and malformed output triggers 2 retries before fallback.
+This runs 7 automated verification gates:
+1. Vitest unit and integration tests (48 tests across 6 test suites).
+2. Spawns local mock LLM server speaking `/v1/chat/completions`.
+3. Seeds clean synthetic bare repository (3,000 files, 40 directories, 200 commits).
+4. Boots Canopy server on ephemeral port with dual SQLite WAL cache.
+5. Verifies 5-file fetch achieves 99.0% bandwidth reduction.
+6. Verifies second digest run makes 0 LLM calls (instant cache hit) and malformed output triggers 2 retries before deterministic heuristic fallback.
+7. Claims audit (`scripts/check-claims.ts`) verifying all numbers against `docs/benchmark-results.json`.
 
 To verify a live deployment:
 ```bash
 npm run verify:live https://canopy-lazy-git.onrender.com
+```
+
+To run Ollama reachability probe:
+```bash
+npm run verify:ollama
+```
+
+To run Sentry GenAI trace generator (20 scenarios):
+```bash
+npm run trace:demo
 ```
 
 ---
@@ -185,6 +196,16 @@ npm run verify:live https://canopy-lazy-git.onrender.com
 2. **Read-Only Server**: Public demo deployments operate in `PUBLIC_READONLY=true` mode. While commit messages can be generated from diffs, write pushes to the server are blocked.
 3. **SQLite Concurrency**: Local SQLite uses WAL mode for high read concurrency, but high multi-threaded write bursts under Windows dev environments can trigger brief file lock delays.
 4. **Single Provider Ergonomics**: To avoid provider bloat, Canopy supports only standard OpenAI-compatible endpoints (`/chat/completions`).
+
+---
+
+## Deadline and Commit Record
+- **DEV Challenge**: Hacktoberfest Open-Source AI Challenge Week 3 ("Slow and Steady", Challenge ID 81)
+- **Deadline**: Oct 25, 2026, 11:59 PM PDT (`2026-10-26T06:59:00Z`)
+- **Completion Timestamp**: `2026-10-23T23:05:00Z` (completed ~56 hours ahead of deadline)
+- **Live Production URL**: [https://canopy-lazy-git.onrender.com](https://canopy-lazy-git.onrender.com)
+- **DEV Draft URL**: [Edit Draft on DEV](https://dev.to/rahmansayem163/canopy-rewarding-laziness-in-git-workflows-with-on-demand-slices-and-semantic-caching-1pom-temp-slug-2457033/edit)
+- **GitHub Repository**: [https://github.com/SayemR0018/canopy](https://github.com/SayemR0018/canopy)
 
 ---
 
