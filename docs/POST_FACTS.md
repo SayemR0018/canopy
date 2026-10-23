@@ -10,8 +10,7 @@ The test monorepo is a deterministic synthetic repository generated using a Mulb
 - **Total Directories**: 40
 - **Total Commits**: 200
 - **File Types**: `.ts`, `.tsx`, `.json`, `.md`, `.sql`, `.css`
-- **Full Uncompressed Content Size**: 1.36 MB (1,486,369 bytes)
-- **Repo Generation Time**: 1.48 seconds
+- **Full Uncompressed Content Size**: 1.36 MiB (1,429,206 bytes)
 - **Reproduction Command**:
   ```bash
   npm run seed
@@ -21,16 +20,16 @@ The test monorepo is a deterministic synthetic repository generated using a Mulb
 
 ## 2. Bandwidth & Latency Benchmark Results
 
-Measured by `scripts/benchmark.ts` comparing a standard git clone against Canopy lazy mount and selective file access:
+Measured across 7 independent benchmark iterations by `scripts/benchmark.ts` comparing standard git clone against Canopy lazy mount with per-directory manifest slices and selective on-demand file access:
 
-| Metric | Traditional Git Clone | Canopy Lazy Layer | Difference / Savings |
-| :--- | :--- | :--- | :--- |
-| **Initial Operation Time** | 1,775 ms (`git clone`) | 184 ms (`canopy mount`) | **9.6x faster initial setup** |
-| **Initial Download Size** | 2,908,949 bytes (2.77 MB) | 550,887 bytes (538.0 KB) | **81.1% bandwidth saved** |
-| **Cold Read (5 files)** | Included in clone | 771 ms (2,623 bytes) | Selective on-demand fetch |
-| **Warm Read (5 files)** | Local filesystem | 64.5 ms (0 network bytes) | Local content-addressed cache |
-| **Total Transfer (5 files)** | 2,908,949 bytes (2.77 MB) | 553,510 bytes (540.5 KB) | **81.0% bandwidth reduction** |
-| **Total Time (Mount + 5 files)** | 1,775 ms | 955 ms | **1.9x faster end-to-end** |
+| Metric | Traditional Git Clone (history) | Working Tree Baseline | Canopy Lazy Layer (Median) | Difference / Savings |
+| :--- | :--- | :--- | :--- | :--- |
+| **Initial Operation Time** | 1,858 ms (`git clone`) | N/A | 266 ms (`canopy mount`) | **7x faster initial setup** (min: 250 ms, max: 334 ms) |
+| **Initial Download Size** | 2,908,949 bytes (2.77 MiB) | 1,486,369 bytes (1.42 MiB) | 767 bytes (0.7 KiB) | **100% initial bandwidth saved** (root slice) |
+| **Cold Read (5 files)** | Included in clone | Included in working tree | 1,102 ms (1,937 bytes / 1.9 KiB) | Selective on-demand fetch (min: 1,080 ms, max: 1,243 ms) |
+| **Warm Read (5 files)** | Filesystem cache | Filesystem cache | 25.7 ms (0 network bytes) | Local content-addressed cache (min: 22.8 ms, max: 28.8 ms) |
+| **Total Transfer (5 files)** | 2,908,949 bytes (2.77 MiB) | 1,486,369 bytes (1.42 MiB) | 2,704 bytes (2.6 KiB) | **99.9% savings vs clone** (99.8% vs tree) |
+| **Total Time (Mount + 5 files)** | 1,858 ms | N/A | 1,368 ms | **1.4x faster end-to-end** |
 
 - **Reproduction Command**:
   ```bash
@@ -42,13 +41,13 @@ Measured by `scripts/benchmark.ts` comparing a standard git clone against Canopy
 
 ## 3. Verification Gate Suite Facts
 
-Automated verification suite `scripts/verify.ts` runs 6 sequential verification gates from a clean environment:
+Automated verification suite `scripts/verify.ts` runs 7 sequential verification gates from a clean environment:
 
-1. **Unit & Integration Suite**: 38 passed in 3.08s (`vitest run`).
+1. **Unit & Integration Suite**: 45 passed (`vitest run`).
 2. **Mock LLM Server**: Local HTTP server listening on `http://localhost:4123/v1` speaking `/v1/chat/completions`.
 3. **Synthetic Bare Seed**: 3,000 files across 40 directories and 200 commits generated in under 2 seconds.
 4. **Server Boot**: In-process Hono server initialized with dual SQLite WAL cache on port `3999`.
-5. **E2E 5-File Fetch**: Downloaded 540.5 KB vs 1.36 MB full clone, proving **61.3% bandwidth reduction**.
+5. **E2E 5-File Fetch**: Downloaded 2.6 KiB vs 2.77 MiB full clone, proving **99.9% bandwidth reduction**.
 6. **AI Zero-Call Cache Hit**: Second digest execution made **0 additional LLM calls** (`cached: true`).
 7. **Resilience & Fallback**: Malformed model output triggered exactly **2 retries** (3 total attempts) before falling back to deterministic heuristic summary flagged `is_degraded: true`.
 

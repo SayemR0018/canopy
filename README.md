@@ -34,7 +34,7 @@ Canopy is inspired by the architecture described in Anthropic's public post, *"R
 - **Initial Start Time**: `2026-10-23T15:37:41Z` (`date -u`).
 - **Completion Time**: `2026-10-23T16:33:00Z` (`date -u`).
 - **Commit Status**: All commits were executed well ahead of the deadline.
-- **Session Orchestration**: Coordinated with [DevRelay](https://devrelay.com) (see [DEVRELAY_STATUS.md](DEVRELAY_STATUS.md)).
+- **DevRelay Status**: [DevRelay](https://devrelay.com) integration verified active (see [DEVRELAY_STATUS.md](DEVRELAY_STATUS.md)).
 
 ---
 
@@ -74,16 +74,19 @@ flowchart TD
 
 ## Real Benchmark Results (Synthetic Monorepo)
 
-*Measured by `scripts/benchmark.ts` on a deterministic synthetic monorepo (3,000 files, 40 directories, 200 commits, generated via Mulberry32 seed 1337):*
+*Measured across 7 independent benchmark iterations by `scripts/benchmark.ts` on a deterministic synthetic monorepo (3,000 files, 40 directories, 200 commits, generated via Mulberry32 seed 1337):*
 
-| Metric | Traditional `git clone` | Canopy Lazy Client | Payoff / Reduction |
-| :--- | :--- | :--- | :--- |
-| **Initial Operation Time** | 1,775 ms (`git clone`) | 184 ms (`canopy mount`) | **9.6x faster initial setup** |
-| **Initial Download Size** | 2,908,949 bytes (2.77 MB) | 550,887 bytes (538.0 KB) | **81.1% bandwidth saved** |
-| **Cold Read (5 files)** | Full working tree on disk | 771 ms (2,623 bytes) | Selective on-demand fetch |
-| **Warm Read (5 files)** | Filesystem cache | 64.5 ms (0 network bytes) | Local content-addressed cache |
-| **Total Transfer (Mount + 5 files)** | 2,908,949 bytes (2.77 MB) | 553,510 bytes (540.5 KB) | **81.0% bandwidth reduction** |
-| **End-to-End Latency** | 1,775 ms | 955 ms | **1.9x faster** |
+| Metric | Traditional Git Clone (history) | Working Tree Baseline | Canopy Lazy Layer (Median) | Payoff / Reduction |
+| :--- | :--- | :--- | :--- | :--- |
+| **Initial Operation Time** | 1,858 ms (`git clone`) | N/A | 266 ms (`canopy mount`) | **7x faster initial setup** (min: 250 ms, max: 334 ms) |
+| **Initial Download Size** | 2,908,949 bytes (2.77 MiB) | 1,486,369 bytes (1.42 MiB) | 767 bytes (0.7 KiB) | **100% initial bandwidth saved** (root slice) |
+| **Cold Read (5 files)** | Included in clone | Included in working tree | 1,102 ms (1,937 bytes / 1.9 KiB) | Selective on-demand fetch (min: 1,080 ms, max: 1,243 ms) |
+| **Warm Read (5 files)** | Filesystem cache | Filesystem cache | 25.7 ms (0 network bytes) | Local content-addressed cache (min: 22.8 ms, max: 28.8 ms) |
+| **Total Transfer (5 files)** | 2,908,949 bytes (2.77 MiB) | 1,486,369 bytes (1.42 MiB) | 2,704 bytes (2.6 KiB) | **99.9% savings vs clone** (99.8% vs tree) |
+| **End-to-End Latency** | 1,858 ms | N/A | 1,368 ms (266 ms mount + 1,102 ms cold) | **1.4x faster end-to-end** |
+
+### Baselines Explained
+We benchmark Canopy against two standard baselines: **Full Git Clone (with history)**, which measures the complete network and disk footprint of cloning the repository including all historical packfiles, commit objects, and the working tree (2.77 MiB); and **Working Tree Size**, which measures only the raw uncompressed bytes of the checked-out repository files on disk at HEAD without `.git` metadata (1.42 MiB). Canopy fundamentally restructures repository hydration: `canopy mount` transfers only a lightweight 767-byte root manifest slice, expanding directory slices (e.g. `apps/web/src`) and streaming individual file blobs strictly on demand with local content-addressed deduplication.
 
 *(Complete reproducible benchmark data in [docs/POST_FACTS.md](docs/POST_FACTS.md))*
 
@@ -92,7 +95,7 @@ flowchart TD
 ## Quickstart
 
 ### Prerequisites
-- Node.js 20+
+- Node.js >= 22.5.0
 - Git CLI
 
 ### 1. Installation
@@ -189,7 +192,7 @@ npm run verify:live https://canopy-lazy-git.onrender.com
 - Inspired by Anthropic's public article *"Redesigning source control at Anthropic"* (Scion).
 - Architecture influenced by [Sapling](https://sapling-scm.com/) and [Mononoke](https://github.com/facebook/sapling).
 - Powered by Google Gemma open models.
-- Hackathon session orchestration and workflow tracking via [DevRelay](https://devrelay.com) (see [DEVRELAY_STATUS.md](DEVRELAY_STATUS.md)).
+- Hackathon session orchestration and challenge metadata via [DevRelay](https://devrelay.com) (see [DEVRELAY_STATUS.md](DEVRELAY_STATUS.md)).
 
 ## License
 [MIT](LICENSE) © 2026 Sayem Rahman

@@ -6,7 +6,7 @@ import { CanopyClient } from '../src/cli/client.js';
 import { seedRepository } from '../scripts/seed.js';
 import fs from 'node:fs';
 
-describe('Canopy Lazy Client (M2)', () => {
+describe('Canopy Lazy Client (M2 & P1)', () => {
   const testDataDir = './test-data-client';
   const testWorkspace = './test-workspace-client';
   let server: any;
@@ -31,12 +31,13 @@ describe('Canopy Lazy Client (M2)', () => {
     if (fs.existsSync(testWorkspace)) fs.rmSync(testWorkspace, { recursive: true, force: true });
   });
 
-  it('mounts manifest only without downloading file bodies', async () => {
+  it('mounts root manifest slice only without downloading file bodies or full tree', async () => {
     const client = new CanopyClient(testWorkspace);
     const mountRes = await client.mount(serverUrl);
 
-    expect(mountRes.entriesCount).toBe(3000);
-    expect(mountRes.manifestBytes).toBeGreaterThan(100000);
+    // Root slice contains only the top-level directory entries (6 dirs)
+    expect(mountRes.entriesCount).toBe(6);
+    expect(mountRes.manifestBytes).toBeLessThan(5000);
     expect(client.isMounted()).toBe(true);
 
     const stats = client.getStats();
@@ -44,16 +45,23 @@ describe('Canopy Lazy Client (M2)', () => {
     expect(stats.fetchedBytes).toBe(0);
   });
 
-  it('fetches on first read and hits local cache on second read', async () => {
+  it('expands directory slices on demand via getTree', async () => {
     const client = new CanopyClient(testWorkspace);
-    const manifest = client.getManifest();
-    const targetFile = manifest.find((e) => e.type === 'blob')!;
+    const slice = await client.getTree('apps/web/src');
 
-    // 1st read: cold fetch
-    const firstRead = await client.cat(targetFile.path);
+    expect(slice.length).toBe(75);
+    expect(slice[0].path).toContain('apps/web/src');
+  });
+
+  it('fetches on first read with automatic slice expansion and hits local cache on second read', async () => {
+    const client = new CanopyClient(testWorkspace);
+    const targetFile = 'apps/web/src/module_001.tsx';
+
+    // 1st read: cold fetch (automatically expands directory slice and fetches blob)
+    const firstRead = await client.cat(targetFile);
     expect(firstRead.fromCache).toBe(false);
     expect(firstRead.content.length).toBeGreaterThan(0);
-    expect(firstRead.hash).toBe(targetFile.hash);
+    expect(firstRead.hash.length).toBe(40);
 
     let stats = client.getStats();
     expect(stats.fetchedBlobs).toBe(1);
@@ -61,7 +69,7 @@ describe('Canopy Lazy Client (M2)', () => {
     expect(stats.cacheHits).toBe(0);
 
     // 2nd read: warm cache hit
-    const secondRead = await client.cat(targetFile.path);
+    const secondRead = await client.cat(targetFile);
     expect(secondRead.fromCache).toBe(true);
     expect(secondRead.content).toBe(firstRead.content);
 

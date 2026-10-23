@@ -71,3 +71,9 @@
 - **Done**: Executed read-only get_challenges via MCP; verified response returned challenge ID 81 (Hacktoberfest Week 3, ends 2026-10-25T06:59:00Z). Updated DEVRELAY_STATUS.md to ACTIVE.
 - **Evidence**: `devrelay-gateway/get_challenges` returned 34.4 KB JSON payload containing challenge 81.
 - **Next**: P1 - Claims Audit and Fixes.
+
+## P1: Claims Audit and Fixes
+- **Status**: DONE
+- **Done**: Built scripts/check-claims.ts and integrated into verify gate suite. Implemented per-directory manifest slices for canopy mount (fetches root slice of 767 bytes; expands directories on demand). Ran 7-iteration benchmark reporting median/min/max against full clone and working tree in consistent KiB/MiB units. Regenerated docs/benchmark-results.json, README table, and docs/POST_FACTS.md with baseline explanation and Node >= 22.5.0.
+- **Evidence**: 7-iteration benchmark recorded: mount 266 ms / 767 bytes; 5-file cold read 1,102 ms / 1,937 bytes; 99.9% bandwidth reduction vs full clone (2.77 MiB); 99.8% vs working tree (1.42 MiB). check-claims passed 86/86 claims; 45 unit tests passed; npm run verify 7/7 gates passed.
+- **Next**: P2 - Cold-Start Fix (Gemma model bakeoff, background demo cache warming, UI warming indicator, request timeouts).

@@ -30,6 +30,7 @@ export class CanopyClient {
   private workspaceDir: string;
   private canopyDir: string;
   private cacheDir: string;
+  private slicesDir: string;
   private configFile: string;
   private manifestFile: string;
   private statsFile: string;
@@ -38,6 +39,7 @@ export class CanopyClient {
     this.workspaceDir = path.resolve(workspaceDir);
     this.canopyDir = path.join(this.workspaceDir, '.canopy');
     this.cacheDir = path.join(this.canopyDir, 'cache');
+    this.slicesDir = path.join(this.canopyDir, 'slices');
     this.configFile = path.join(this.canopyDir, 'config.json');
     this.manifestFile = path.join(this.canopyDir, 'manifest.json');
     this.statsFile = path.join(this.canopyDir, 'stats.json');
@@ -88,8 +90,8 @@ export class CanopyClient {
     // Normalize serverUrl (remove trailing slash)
     const cleanUrl = serverUrl.replace(/\/+$/, '');
 
-    // Fetch recursive tree manifest
-    const res = await fetch(`${cleanUrl}/api/tree?rev=${encodeURIComponent(rev)}&recursive=true`);
+    // Fetch root slice manifest (non-recursive: only top-level directory entries)
+    const res = await fetch(`${cleanUrl}/api/tree?rev=${encodeURIComponent(rev)}`);
     if (!res.ok) {
       throw new Error(`Failed to fetch manifest from ${cleanUrl}: ${res.status} ${res.statusText}`);
     }
@@ -98,10 +100,29 @@ export class CanopyClient {
     const data = JSON.parse(rawText);
     const entries: ManifestEntry[] = data.entries || [];
 
+    // Also fetch repository stats for total baseline uncompressed bytes and files
+    let totalRepoBytes = 0;
+    let totalRepoFiles = 0;
+    try {
+      const statsRes = await fetch(`${cleanUrl}/api/stats`);
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        totalRepoBytes = statsData.totalBytes || 0;
+        totalRepoFiles = statsData.totalFiles || 0;
+      }
+    } catch {
+      // Fallback if /api/stats unreachable
+    }
+    if (totalRepoBytes === 0) {
+      totalRepoBytes = entries.reduce((acc, e) => acc + (e.type === 'blob' ? e.size : 0), 0);
+      totalRepoFiles = entries.filter((e) => e.type === 'blob').length;
+    }
+
     // Ensure directories exist
     fs.mkdirSync(this.workspaceDir, { recursive: true });
     fs.mkdirSync(this.canopyDir, { recursive: true });
     fs.mkdirSync(this.cacheDir, { recursive: true });
+    fs.mkdirSync(this.slicesDir, { recursive: true });
 
     // Save config
     const config: CanopyConfig = {
@@ -111,12 +132,9 @@ export class CanopyClient {
     };
     fs.writeFileSync(this.configFile, JSON.stringify(config, null, 2), 'utf8');
 
-    // Save manifest
+    // Save initial root slice & manifest
+    fs.writeFileSync(path.join(this.slicesDir, 'root.json'), rawText, 'utf8');
     fs.writeFileSync(this.manifestFile, JSON.stringify(entries, null, 2), 'utf8');
-
-    // Calculate total uncompressed repo bytes
-    const totalRepoBytes = entries.reduce((acc, e) => acc + (e.type === 'blob' ? e.size : 0), 0);
-    const totalRepoFiles = entries.filter((e) => e.type === 'blob').length;
 
     // Initialize stats
     const stats: CanopyStats = {
@@ -137,6 +155,63 @@ export class CanopyClient {
     };
   }
 
+  public async getTree(dirParam: string = ''): Promise<ManifestEntry[]> {
+    const config = this.getConfig();
+    const stats = this.getStats();
+
+    const normalizedDir = dirParam.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+    const sliceKey = normalizedDir === '' ? 'root' : normalizedDir.replace(/\//g, '__');
+    const sliceFile = path.join(this.slicesDir, `${sliceKey}.json`);
+
+    // Check if slice already cached locally
+    if (fs.existsSync(sliceFile)) {
+      try {
+        const raw = fs.readFileSync(sliceFile, 'utf8');
+        const parsed = JSON.parse(raw);
+        return parsed.entries || [];
+      } catch {
+        // Corrupt cache file, fallback to network
+      }
+    }
+
+    // Fetch directory slice from server
+    const fetchUrl = `${config.serverUrl}/api/tree?dir=${encodeURIComponent(normalizedDir)}&rev=${encodeURIComponent(config.mountRev)}`;
+    const res = await fetch(fetchUrl);
+    if (!res.ok) {
+      throw new Error(`Failed to fetch directory slice from ${fetchUrl}: ${res.status} ${res.statusText}`);
+    }
+
+    const rawText = await res.text();
+    const sliceBytes = Buffer.byteLength(rawText, 'utf8');
+    const data = JSON.parse(rawText);
+    const newEntries: ManifestEntry[] = data.entries || [];
+
+    // Cache slice locally
+    fs.mkdirSync(this.slicesDir, { recursive: true });
+    fs.writeFileSync(sliceFile, rawText, 'utf8');
+
+    // Update manifest by merging new entries
+    const currentManifest = this.getManifest();
+    const existingPaths = new Set(currentManifest.map((e) => e.path));
+    let added = false;
+    for (const entry of newEntries) {
+      if (!existingPaths.has(entry.path)) {
+        currentManifest.push(entry);
+        existingPaths.add(entry.path);
+        added = true;
+      }
+    }
+    if (added) {
+      fs.writeFileSync(this.manifestFile, JSON.stringify(currentManifest, null, 2), 'utf8');
+    }
+
+    // Track slice network transfer in stats
+    stats.manifestBytes += sliceBytes;
+    this.saveStats(stats);
+
+    return newEntries;
+  }
+
   public async cat(filePath: string): Promise<{
     content: string;
     fromCache: boolean;
@@ -144,11 +219,21 @@ export class CanopyClient {
     size: number;
   }> {
     const config = this.getConfig();
-    const manifest = this.getManifest();
+    let manifest = this.getManifest();
     const stats = this.getStats();
 
     const normalized = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
-    const entry = manifest.find((e) => e.path === normalized && e.type === 'blob');
+    let entry = manifest.find((e) => e.path === normalized && e.type === 'blob');
+
+    // If file is not in current manifest, expand parent directory slice on demand
+    if (!entry) {
+      const parentDir = path.posix.dirname(normalized);
+      if (parentDir && parentDir !== '.') {
+        await this.getTree(parentDir);
+        manifest = this.getManifest();
+        entry = manifest.find((e) => e.path === normalized && e.type === 'blob');
+      }
+    }
 
     if (!entry) {
       throw new Error(`File '${filePath}' not found in mounted tree manifest`);
@@ -275,4 +360,3 @@ export class CanopyClient {
     return await res.json();
   }
 }
-

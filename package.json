@@ -19,6 +19,7 @@
     "benchmark": "tsx scripts/benchmark.ts",
     "verify": "tsx scripts/verify.ts",
     "verify:live": "tsx scripts/verify-live.ts",
+    "check-claims": "tsx scripts/check-claims.ts",
     "demo:record": "tsx scripts/record-demo.ts"
   },
   "keywords": [

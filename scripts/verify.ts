@@ -30,7 +30,7 @@ async function verify() {
 
   try {
     // Step 1: Run Unit Tests
-    console.log(`[Step 1/6] Running Vitest test suite...`);
+    console.log(`[Step 1/7] Running Vitest test suite...`);
     await runCommand('npx', ['vitest', 'run']);
     console.log(`  ✅ All unit tests passed.\n`);
 
@@ -40,7 +40,7 @@ async function verify() {
     fs.mkdirSync(verifyDataDir, { recursive: true });
 
     // Step 2: Tiny Local Mock LLM Server speaking /v1/chat/completions
-    console.log(`[Step 2/6] Starting local Mock LLM server speaking /v1/chat/completions...`);
+    console.log(`[Step 2/7] Starting local Mock LLM server speaking /v1/chat/completions...`);
     let mockLlmCallCount = 0;
     let shouldReturnBadOutput = false;
 
@@ -85,12 +85,12 @@ async function verify() {
     console.log(`  ✅ Mock LLM server listening on http://localhost:4123/v1\n`);
 
     // Step 3: Seed Synthetic Monorepo
-    console.log(`[Step 3/6] Seeding deterministic synthetic monorepo in ${verifyDataDir}...`);
+    console.log(`[Step 3/7] Seeding deterministic synthetic monorepo in ${verifyDataDir}...`);
     const seedStats = await seedRepository(verifyDataDir);
     console.log(`  ✅ Seeded ${seedStats.totalFiles} files across ${seedStats.totalDirs} dirs and ${seedStats.totalCommits} commits.\n`);
 
     // Step 4: Boot Canopy Server
-    console.log(`[Step 4/6] Booting Canopy Server with mock LLM and SQLite cache...`);
+    console.log(`[Step 4/7] Booting Canopy Server with mock LLM and SQLite cache...`);
     const gitService = new GitService(path.join(verifyDataDir, 'repo.git'));
     const db = openDatabase(path.join(verifyDataDir, 'cache.db'));
     const llmClient = new OpenAICompatibleClient({
@@ -137,15 +137,14 @@ async function verify() {
     console.log(`  ✅ Canopy Server listening on http://localhost:3999\n`);
 
     // Step 5: E2E check - Opening 5 files fetches far fewer bytes than full clone
-    console.log(`[Step 5/6] E2E lazy fetch benchmark (5 files vs full clone)...`);
+    console.log(`[Step 5/7] E2E lazy fetch benchmark (5 files vs full clone)...`);
     const client = new CanopyClient(verifyWorkspaceDir);
     const mountRes = await client.mount('http://localhost:3999');
     console.log(`  - Manifest bytes downloaded: ${(mountRes.manifestBytes / 1024).toFixed(1)} KB`);
     console.log(`  - Full repo content size:   ${(mountRes.totalRepoBytes / 1024 / 1024).toFixed(2)} MB`);
 
-    const manifest = client.getManifest();
-    const blobs = manifest.filter((e) => e.type === 'blob');
-    const sampleFiles = blobs.slice(0, 5);
+    const sampleSlice = await client.getTree('apps/web/src');
+    const sampleFiles = sampleSlice.filter((e) => e.type === 'blob').slice(0, 5);
 
     for (const f of sampleFiles) {
       await client.cat(f.path);
@@ -161,7 +160,7 @@ async function verify() {
     console.log(`  ✅ Verified: Opening 5 files saved ${summary.savingsPercent.toFixed(1)}% bandwidth vs full clone!\n`);
 
     // Step 6: Second digest makes 0 LLM calls + Bad model output retry and fallback
-    console.log(`[Step 6/6] Verifying cache zero-calls and bad model retry fallback...`);
+    console.log(`[Step 6/7] Verifying cache zero-calls and bad model retry fallback...`);
     const initialCalls = mockLlmCallCount;
 
     // First digest call (Cold: calls mock LLM)
@@ -196,11 +195,17 @@ async function verify() {
     canopyHttpServer.close();
     db.close();
 
+    // Step 7: Claims audit against docs/benchmark-results.json
+    console.log(`\n[Step 7/7] Verifying all numerical claims in README.md and docs/POST_FACTS.md...`);
+    await runCommand('npx', ['tsx', 'scripts/check-claims.ts']);
+    console.log(`  ✅ Verified: All claims match script outputs.\n`);
+
     console.log(`\n======================================================`);
     console.log(`🎉 ALL VERIFICATION GATES PASSED SUCCESSFULLY!`);
     console.log(`Bandwidth reduction: ${summary.savingsPercent.toFixed(1)}%`);
     console.log(`Zero-call cache hit: verified`);
     console.log(`Retry & heuristic fallback: verified`);
+    console.log(`Claims audit: verified`);
     console.log(`======================================================\n`);
   } finally {
     try {
