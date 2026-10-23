@@ -28,6 +28,7 @@ Canopy is completely open source under the MIT License:
 
 - **GitHub Repository**: [https://github.com/SayemR0018/canopy](https://github.com/SayemR0018/canopy)
 - **Tech Stack**: Node 22, TypeScript, Hono, SQLite (dual better-sqlite3 / built-in node:sqlite with WAL mode), Vitest, Playwright, Docker, Render.
+- **Session Orchestration**: Coordinated via [DevRelay](https://devrelay.com) (see [DEVRELAY_STATUS.md](https://github.com/SayemR0018/canopy/blob/main/DEVRELAY_STATUS.md)).
 
 ## How I Built It
 
@@ -48,8 +49,11 @@ In my testing, the open approach provided unmatched privacy, predictable determi
 
 ## My Agent Session
 
-This project was built end-to-end with Devin (Argon model). The complete chronological record of decisions and milestones is available in the repository:
+This project was built end-to-end with an autonomous AI coding agent workflow (Devin Argon model). Hackathon session orchestration and challenge tracking were coordinated via [DevRelay](https://devrelay.com). When automated MCP tool permissions are gated in strict headless environments, Canopy falls back directly to repository-authoritative progress tracking (documented in [DEVRELAY_STATUS.md](https://github.com/SayemR0018/canopy/blob/main/DEVRELAY_STATUS.md)).
 
+The complete chronological record of decisions and milestones is available in the repository:
+
+- [DEVRELAY_STATUS.md](https://github.com/SayemR0018/canopy/blob/main/DEVRELAY_STATUS.md): Hackathon agent orchestration status and MCP gateway environment notes with [DevRelay](https://devrelay.com).
 - [PROGRESS.md](https://github.com/SayemR0018/canopy/blob/main/PROGRESS.md): Step-by-step milestone execution record from scaffold to production.
 - [DECISIONS.md](https://github.com/SayemR0018/canopy/blob/main/DECISIONS.md): Architectural decisions log covering SQLite adapters, model selection, and payload limits.
 - [docs/POST_FACTS.md](https://github.com/SayemR0018/canopy/blob/main/docs/POST_FACTS.md): Verified benchmark figures and reproduction commands.

@@ -34,6 +34,7 @@ Canopy is inspired by the architecture described in Anthropic's public post, *"R
 - **Initial Start Time**: `2026-10-23T15:37:41Z` (`date -u`).
 - **Completion Time**: `2026-10-23T16:33:00Z` (`date -u`).
 - **Commit Status**: All commits were executed well ahead of the deadline.
+- **Session Orchestration**: Coordinated with [DevRelay](https://devrelay.com) (see [DEVRELAY_STATUS.md](DEVRELAY_STATUS.md)).
 
 ---
 
@@ -188,6 +189,7 @@ npm run verify:live https://canopy-lazy-git.onrender.com
 - Inspired by Anthropic's public article *"Redesigning source control at Anthropic"* (Scion).
 - Architecture influenced by [Sapling](https://sapling-scm.com/) and [Mononoke](https://github.com/facebook/sapling).
 - Powered by Google Gemma open models.
+- Hackathon session orchestration and workflow tracking via [DevRelay](https://devrelay.com) (see [DEVRELAY_STATUS.md](DEVRELAY_STATUS.md)).
 
 ## License
 [MIT](LICENSE) © 2026 Sayem Rahman
