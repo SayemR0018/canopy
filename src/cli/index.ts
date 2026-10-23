@@ -1,5 +1,23 @@
+import path from 'node:path';
 import { Command } from 'commander';
 import { CanopyClient } from './client.js';
+
+function readStdin(): Promise<string> {
+  return new Promise((resolve) => {
+    if (process.stdin.isTTY) {
+      resolve('');
+      return;
+    }
+    let data = '';
+    process.stdin.setEncoding('utf8');
+    process.stdin.on('data', (chunk) => {
+      data += chunk;
+    });
+    process.stdin.on('end', () => {
+      resolve(data);
+    });
+  });
+}
 
 export function createCLI(): Command {
   const program = new Command();
@@ -73,6 +91,91 @@ export function createCLI(): Command {
         console.log('───────────────────────────────────────────────────────\n');
       } catch (err: any) {
         console.error(`❌ Stats error:`, err.message);
+        process.exit(1);
+      }
+    });
+
+  // M4: canopy digest [--since] [--lang en|bn]
+  program
+    .command('digest')
+    .description('Generate AI repository digest (exactly two lines + risk-flags)')
+    .option('-s, --since <rev>', 'Git revision / time range to summarize since', 'HEAD~5')
+    .option('-l, --lang <lang>', 'Summary language (en or bn)', 'en')
+    .option('-w, --workspace <dir>', 'Workspace directory', './canopy-workspace')
+    .action(async (options) => {
+      try {
+        const client = new CanopyClient(options.workspace);
+        const lang = options.lang === 'bn' ? 'bn' : 'en';
+        const res = await client.digest(options.since, lang);
+
+        if (process.stdout.isTTY) {
+          console.log(`[Canopy Digest: ${res.cached ? 'CACHE HIT' : 'GENERATED'} | ${res.isDegraded ? 'DEGRADED FALLBACK' : 'AI MODEL'}]\n`);
+        }
+        console.log(res.data.line1);
+        console.log(res.data.line2);
+        console.log('\nRisk Flags:');
+        for (const flag of res.data.risk_flags) {
+          console.log(`- ${flag}`);
+        }
+        if (res.truncated) {
+          console.log('\n(Note: Diff was truncated to fit context limits)');
+        }
+      } catch (err: any) {
+        console.error(`❌ Digest error:`, err.message);
+        process.exit(1);
+      }
+    });
+
+  // M4: canopy commit (message from diff on stdin)
+  program
+    .command('commit')
+    .description('Generate a semantic commit message from a diff passed on stdin')
+    .option('-w, --workspace <dir>', 'Workspace directory', './canopy-workspace')
+    .action(async (options) => {
+      try {
+        const client = new CanopyClient(options.workspace);
+        const diffText = await readStdin();
+
+        if (!diffText || !diffText.trim()) {
+          console.error('❌ Commit error: No diff provided on stdin. Example usage:');
+          console.error('  git diff | canopy commit');
+          process.exit(1);
+        }
+
+        const res = await client.commitMessage(diffText);
+        console.log(res.data.title);
+        if (res.data.body) {
+          console.log(`\n${res.data.body}`);
+        }
+        if (res.truncated) {
+          console.log('\n# Note: Diff was truncated to fit context limits');
+        }
+      } catch (err: any) {
+        console.error(`❌ Commit message error:`, err.message);
+        process.exit(1);
+      }
+    });
+
+  // M4: canopy why <path>
+  program
+    .command('why <filePath>')
+    .description('Explain why a file exists and how it evolved (history + blame + cached summary)')
+    .option('-r, --rev <rev>', 'Git revision', 'HEAD')
+    .option('-w, --workspace <dir>', 'Workspace directory', './canopy-workspace')
+    .action(async (filePath, options) => {
+      try {
+        const client = new CanopyClient(options.workspace);
+        const res = await client.why(filePath, options.rev);
+
+        console.log(`\n🌲 Canopy Why: ${filePath} (${res.cached ? 'CACHE HIT' : 'COLD ANALYZED'})\n`);
+        console.log(`Role:            ${res.data.role}`);
+        console.log(`Architecture:    ${res.data.architecture}`);
+        console.log(`Change Patterns: ${res.data.change_patterns}`);
+        if (res.truncated) {
+          console.log('\n(Note: Context was truncated to fit context limits)');
+        }
+      } catch (err: any) {
+        console.error(`❌ Why error:`, err.message);
         process.exit(1);
       }
     });

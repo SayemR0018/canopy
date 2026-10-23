@@ -237,4 +237,42 @@ export class CanopyClient {
       cacheHitRate,
     };
   }
+
+  public async digest(since: string = 'HEAD~5', lang: string = 'en'): Promise<any> {
+    const config = this.getConfig();
+    const url = `${config.serverUrl}/api/derived/digest?since=${encodeURIComponent(since)}&lang=${encodeURIComponent(lang)}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Digest failed (${res.status}): ${err}`);
+    }
+    return await res.json();
+  }
+
+  public async commitMessage(diffText: string): Promise<any> {
+    const config = this.getConfig();
+    const url = `${config.serverUrl}/api/derived/commit`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ diff: diffText }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Commit message generation failed (${res.status}): ${err}`);
+    }
+    return await res.json();
+  }
+
+  public async why(filePath: string, rev: string = 'HEAD'): Promise<any> {
+    const config = this.getConfig();
+    const url = `${config.serverUrl}/api/derived/why?path=${encodeURIComponent(filePath)}&rev=${encodeURIComponent(rev)}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Why query failed (${res.status}): ${err}`);
+    }
+    return await res.json();
+  }
 }
+

@@ -19,12 +19,16 @@
 - **Next**: Milestone 3 - Derived Cache (SQLite derived table, single OpenAI-compatible LLM client, Zod schema validation, retry logic, deterministic fallback).
 
 ## M3: Derived Cache
-- **Status**: PENDING
-- **Next**: SQLite derived cache table, Zod validation, retry logic, deterministic heuristic fallback.
+- **Status**: DONE
+- **Done**: SQLite `derived` table created (blob_hash, kind, model, prompt_version, lang, output, tokens_in, tokens_out, latency_ms, is_degraded). Implemented `DerivedService` with strict Zod validation (SummarySchema, DigestSchema, CommitMsgSchema, WhySchema), 2 retries, deterministic fallback flagged `degraded`, and payload truncation.
+- **Evidence**: `test/derived.test.ts` (5 tests passing: SQLite caching, 0 LLM calls on second read, 2 retries + fallback, Bengali translation, and truncation).
+- **Next**: Milestone 4 - Agent Commands.
 
 ## M4: Agent Commands
-- **Status**: PENDING
-- **Next**: `canopy digest`, `canopy commit`, `canopy why`.
+- **Status**: DONE
+- **Done**: Implemented `canopy digest [--since] [--lang en|bn]` (enforced exactly two lines + risk flags list), `canopy commit` (message from diff on stdin), `canopy why <path>` (history + blame + cached summary), and API routes in `app.ts`. Added 64KB diff size guard.
+- **Evidence**: `test/agent-commands.test.ts` (7 tests passing: 2-line digest validation, Bengali output, cache zero-call hit, commit generation, 64KB size rejection, why analysis, trace stats).
+- **Next**: Milestone 5 - Web UI (responsive light/dark UI, lazy file tree, digest panel, why panel, metrics trace view).
 
 ## M5: Web UI
 - **Status**: PENDING

@@ -64,6 +64,7 @@ async function startServer() {
     publicReadonly: PUBLIC_READONLY,
     rateLimitPerMin: RATE_LIMIT_PER_MIN,
     dailyTokenCap: DAILY_TOKEN_CAP,
+    sentryDsn: process.env.SENTRY_DSN,
   });
 
   const server = serve(

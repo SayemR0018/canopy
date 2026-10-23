@@ -1,6 +1,8 @@
 node_modules/
 dist/
 data/
+test-data-*/
+canopy-workspace*/
 .env
 *.log
 coverage/
