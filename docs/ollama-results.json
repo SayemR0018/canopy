@@ -1,0 +1,9 @@
+{
+  "timestamp": "2026-10-23T22:52:19.215Z",
+  "available": false,
+  "endpoint": "http://localhost:11434",
+  "status": "Unavailable: fetch failed",
+  "installedModels": [],
+  "note": "Ollama is not running in this environment. Canopy gracefully degrades or uses Google AI Studio Gemini/Gemma.",
+  "instructions": "Install Ollama, execute `ollama pull gemma2:2b`, and configure CANOPY_LLM_BASE_URL=http://localhost:11434/v1"
+}

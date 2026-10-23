@@ -19,6 +19,7 @@
     "benchmark": "tsx scripts/benchmark.ts",
     "verify": "tsx scripts/verify.ts",
     "verify:live": "tsx scripts/verify-live.ts",
+    "verify:ollama": "tsx scripts/verify-ollama.ts",
     "check-claims": "tsx scripts/check-claims.ts",
     "bakeoff": "tsx scripts/bakeoff.ts",
     "demo:record": "tsx scripts/record-demo.ts",

@@ -88,4 +88,8 @@
 - **Status**: DONE
 - **Done**: Enhanced `src/server/sentry.ts` and `src/server/derived.ts` with Sentry OpenTelemetry GenAI agent tracing across four designated agents: `CanopyDigestAgent`, `CanopyWhyAgent`, `CanopyCommitAgent`, and `CanopySummaryAgent`. Tracked semantic attributes (`gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.prompt_tokens`, `gen_ai.usage.completion_tokens`, latency, `canopy.cache_hit`, `canopy.retry_count`, `canopy.is_degraded`, `canopy.lang`). Implemented strict privacy scrubbing ensuring client IP addresses are not stored or transmitted (`user.ip_address: undefined`), and file diffs / payload bodies are stripped. Created `scripts/trace-demo.ts` (`npm run trace:demo`) simulating and recording 20 varied scenario traces into Sentry. Added unit tests for GenAI tracing and PII scrubbing in `test/sentry.test.ts`. Verified `SENTRY_DSN` is configured on Render service and updated `DEPLOY.md`.
 - **Evidence**: `npm run trace:demo` generated and delivered 20/20 traces to Sentry; unit tests in `test/sentry.test.ts` increased to 8 passing tests (48 tests total); `npm run verify` passes 7/7 gates.
-- **Next**: P5 - Ollama Verification (`scripts/verify-ollama.ts`, reachability check at http://localhost:11434, local model check).
+## P5: Ollama Verification
+- **Status**: DONE
+- **Done**: Created `scripts/verify-ollama.ts` (`npm run verify:ollama`) probing local Ollama daemon at `http://localhost:11434` with 3s timeout. Verified graceful offline handling when daemon is not installed, outputting setup guide (pulling `gemma2:2b`, setting `CANOPY_LLM_BASE_URL=http://localhost:11434/v1`), and generating `docs/ollama-results.json` without failing test runs.
+- **Evidence**: `npm run verify:ollama` executed with exit code 0; `docs/ollama-results.json` generated; `npm run check-claims` and all unit tests pass.
+- **Next**: P6 - Tinker (check TINKER_API_KEY presence, record skip decision if absent).
