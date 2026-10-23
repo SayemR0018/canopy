@@ -1,6 +1,6 @@
 import { performance } from 'node:perf_hooks';
 
-const targetUrl = (process.argv[2] || process.env.CANOPY_LIVE_URL || 'http://localhost:3000').replace(/\/+$/, '');
+const targetUrl = (process.argv[2] || process.env.CANOPY_LIVE_URL || 'https://canopy-lazy-git.onrender.com').replace(/\/+$/, '');
 
 console.log(`\n======================================================`);
 console.log(`🌲 Canopy Live Verification Suite (M8)`);

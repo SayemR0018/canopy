@@ -27,7 +27,7 @@ The demo demonstrates Canopy's lazy file tree explorer, live semantic summaries,
 Canopy is completely open source under the MIT License:
 
 - **GitHub Repository**: [https://github.com/SayemR0018/canopy](https://github.com/SayemR0018/canopy)
-- **Tech Stack**: Node 20, TypeScript, Hono, better-sqlite3 (with WAL mode), Vitest, Playwright, Docker, Render.
+- **Tech Stack**: Node 22, TypeScript, Hono, SQLite (dual better-sqlite3 / built-in node:sqlite with WAL mode), Vitest, Playwright, Docker, Render.
 
 ## How I Built It
 
