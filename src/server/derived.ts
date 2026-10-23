@@ -527,7 +527,13 @@ Output ONLY valid JSON.`;
         const modifiedFiles: string[] = [];
         for (const line of lines) {
           if (line.startsWith('+++ b/')) {
-            modifiedFiles.push(line.slice(6));
+            const f = line.slice(6).trim();
+            if (f && !modifiedFiles.includes(f)) modifiedFiles.push(f);
+          } else if (line.startsWith('diff --git a/')) {
+            const match = line.match(/^diff --git a\/\S+ b\/(\S+)/);
+            if (match && match[1] && !modifiedFiles.includes(match[1])) {
+              modifiedFiles.push(match[1]);
+            }
           }
         }
         const fileSample = modifiedFiles.slice(0, 2).join(', ') || 'workspace files';

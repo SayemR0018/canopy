@@ -751,6 +751,9 @@ export function renderCanopyHtml(): string {
 
         document.getElementById('metricCacheRate').textContent = (m.cacheHitRate || 0).toFixed(1) + '%';
         document.getElementById('metricCacheSub').textContent = (m.cacheHits || 0) + ' hits / ' + (m.totalRequests || 0) + ' requests';
+        if (statsRes.benchmarkSavingsPct != null) {
+          document.getElementById('metricSavings').textContent = Number(statsRes.benchmarkSavingsPct).toFixed(1) + '%';
+        }
         document.getElementById('metricCachedBlobs').textContent = (db.totalCachedEntries || 0).toLocaleString();
         document.getElementById('metricDegradedCount').textContent = (db.totalDegradedEntries || 0) + ' degraded fallbacks';
 

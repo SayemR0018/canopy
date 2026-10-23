@@ -97,6 +97,24 @@ describe('Canopy API Server (M1)', () => {
     expect(body.error).toContain('Path traversal');
   });
 
+  it('GET /api/file blocks directory paths with 400', async () => {
+    const res = await app.request('/api/file?path=apps');
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('not a file');
+  });
+
+  it('POST /api/derived/commit is blocked with 403 in public read-only mode', async () => {
+    const res = await app.request('/api/derived/commit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ diff: 'diff --git a/f b/f\n+hello' }),
+    });
+    expect(res.status).toBe(403);
+    const body = await res.json();
+    expect(body.error).toContain('public read-only mode');
+  });
+
   it('GET /api/log returns commit history', async () => {
     const res = await app.request('/api/log?limit=5');
     expect(res.status).toBe(200);

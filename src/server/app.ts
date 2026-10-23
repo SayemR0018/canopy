@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { GitService } from './git.js';
@@ -102,7 +103,11 @@ export function createApp(config: AppConfig) {
       });
     } catch (err: any) {
       sentry.captureException(err, { endpoint: '/api/tree' });
-      const status = err.message.includes('Path traversal') || err.message.includes('Invalid revision') ? 400 : 500;
+      const status = err.message.includes('Path traversal') || err.message.includes('Invalid revision')
+        ? 400
+        : err.message.includes('Not a valid object name') || err.message.includes('does not exist')
+        ? 404
+        : 500;
       return c.json({ error: err.message }, status);
     }
   });
@@ -119,7 +124,7 @@ export function createApp(config: AppConfig) {
       return c.json(file);
     } catch (err: any) {
       sentry.captureException(err, { endpoint: '/api/file' });
-      const status = err.message.includes('Path traversal') || err.message.includes('Invalid revision') ? 400 : 404;
+      const status = err.message.includes('Path traversal') || err.message.includes('Invalid revision') || err.message.includes('is a tree') || err.message.includes('not a file') ? 400 : 404;
       return c.json({ error: err.message }, status);
     }
   });
@@ -164,7 +169,18 @@ export function createApp(config: AppConfig) {
   app.get('/api/stats', async (c) => {
     try {
       const stats = await gitService.getRepoStats();
-      return c.json(stats);
+      let benchmarkSavingsPct = 81.0;
+      try {
+        if (fs.existsSync('./docs/benchmark-results.json')) {
+          const raw = JSON.parse(fs.readFileSync('./docs/benchmark-results.json', 'utf8'));
+          if (raw?.savings5FilesPct != null) benchmarkSavingsPct = raw.savings5FilesPct;
+        }
+      } catch {}
+
+      return c.json({
+        ...stats,
+        benchmarkSavingsPct,
+      });
     } catch (err: any) {
       sentry.captureException(err, { endpoint: '/api/stats' });
       return c.json({ error: err.message }, 500);
@@ -263,6 +279,9 @@ export function createApp(config: AppConfig) {
 
   // POST /api/derived/commit (generates semantic commit message from diff)
   app.post('/api/derived/commit', async (c) => {
+    if (publicReadonly) {
+      return c.json({ error: 'Write endpoints are disabled in public read-only mode' }, 403);
+    }
     try {
       const s = getDerived();
       const rawBody = await c.req.text();

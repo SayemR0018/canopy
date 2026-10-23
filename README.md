@@ -19,11 +19,20 @@ Canopy is inspired by the architecture described in Anthropic's public post, *"R
 
 ---
 
+## Demo Walkthrough
+
+![Canopy Demo Walkthrough](docs/demo.gif)
+
+- **Video Walkthrough (86s)**: [docs/demo.webm](docs/demo.webm) (WebM 1280x720, 5.40 MB)
+- **Interactive Live Service**: [https://canopy-lazy-git.onrender.com](https://canopy-lazy-git.onrender.com)
+
+---
+
 ## Deadline and Commit Record
 
 - **Official Challenge Deadline**: October 25, 2026 at 11:59 PM PDT (`2026-10-26T06:59:00Z`).
 - **Initial Start Time**: `2026-10-23T15:37:41Z` (`date -u`).
-- **Completion Time**: `2026-10-23T16:01:00Z` (`date -u`).
+- **Completion Time**: `2026-10-23T16:33:00Z` (`date -u`).
 - **Commit Status**: All commits were executed well ahead of the deadline.
 
 ---

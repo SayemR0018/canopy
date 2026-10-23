@@ -86,7 +86,7 @@ async function runLiveVerification() {
 
     // Send rapid burst of requests exceeding standard 60 req/min limit
     const promises: Promise<Response>[] = [];
-    for (let i = 0; i < 75; i++) {
+    for (let i = 0; i < 85; i++) {
       promises.push(fetch(`${targetUrl}/api/tree`));
     }
 
@@ -100,10 +100,9 @@ async function runLiveVerification() {
     }
 
     if (!hitRateLimit) {
-      console.warn('  ⚠️ Note: Rate limit burst did not trigger 429 in this environment (may require higher threshold or distributed IPs).');
-    } else {
-      console.log(`  ✅ Rate limiter triggered HTTP ${rateLimitStatus} Too Many Requests as expected.`);
+      throw new Error('Rate limit check failed: Server did not return HTTP 429 upon request burst');
     }
+    console.log(`  ✅ Rate limiter triggered HTTP ${rateLimitStatus} Too Many Requests as expected.`);
     passedChecks++;
   } catch (err: any) {
     console.error(`  ❌ Rate limit check failed: ${err.message}`);

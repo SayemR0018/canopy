@@ -156,6 +156,37 @@ diff --git a/src/app.ts b/src/app.ts
     expect(body.error).toContain('exceeds maximum limit');
   });
 
+  it('handles binary patch diff hunks and extracts modified files', async () => {
+    const binaryDiff = `diff --git a/assets/logo.png b/assets/logo.png
+new file mode 100644
+index 0000000..e69de29
+GIT binary patch
+literal 42
+zcmZ?n00001000000000000000000000000000000000000000
+
+`;
+    const res = await app.request('/api/derived/commit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ diff: binaryDiff }),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data.title).toBeDefined();
+  });
+
+  it('handles concurrent requests to derived endpoints safely', async () => {
+    const requests = Array.from({ length: 10 }, (_, i) =>
+      app.request(`/api/derived/digest?since=HEAD~${(i % 3) + 1}&lang=en`)
+    );
+    const responses = await Promise.all(requests);
+    for (const r of responses) {
+      expect(r.status).toBe(200);
+      const data = await r.json();
+      expect(data.data.line1).toBeDefined();
+    }
+  });
+
   it('GET /api/derived/why returns architectural rationale and history', async () => {
     const treeRes = await app.request('/api/tree?dir=apps/web/src');
     const treeBody = await treeRes.json();

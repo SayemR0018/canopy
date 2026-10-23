@@ -56,6 +56,10 @@
 
 ## M9: Demo + Docs
 - **Status**: DONE
-- **Done**: Automated Playwright recording script (`scripts/record-demo.ts`) recorded a 47-second live walkthrough to `docs/demo.webm` (3.10 MB). Authored comprehensive `README.md` (architecture, real benchmarks, limitations, credits, deadline record), `docs/POST_FACTS.md` with every verified number, and `docs/POST_DRAFT.md` following the exact DEV post guidelines.
-- **Evidence**: `docs/demo.webm` verified; `docs/POST_FACTS.md` verified; `docs/POST_DRAFT.md` verified; `npm run verify` passes 6/6 verification gates.
-- **Next**: Final review and completion report.
+- **Done**: Automated Playwright recording script (`scripts/record-demo.ts`) recorded a 86.2-second live walkthrough to `docs/demo.webm` (5.40 MB) and converted it to `docs/demo.gif` (0.91 MB) using system ffmpeg, fulfilling the 60-90s duration and <10MB GIF requirements. Authored comprehensive `README.md` (architecture, real benchmarks, limitations, credits, deadline record), `docs/POST_FACTS.md` with every verified number, and `docs/POST_DRAFT.md` following the exact DEV post guidelines.
+- **Evidence**: `docs/demo.webm` (86.2s, 5.40 MB) verified; `docs/demo.gif` (0.91 MB) verified; `docs/POST_FACTS.md` verified; `docs/POST_DRAFT.md` verified; `npm run verify` passes 6/6 verification gates (37 unit tests).
+
+## Review & Hardening
+- **Status**: DONE
+- **Done**: Skeptical peer review identified and resolved 8 critical issues: fixed broken CLI entrypoint in `bin/canopy.js`, fixed compiled server entrypoint in `dist/server/index.js`, enforced `PUBLIC_READONLY` mode (HTTP 403 Forbidden on write routes), plugged git option injection vulnerability in `validateSafeRev`, guarded `getFile` against directory/tree paths with HTTP 400, strictly asserted rate limit 429 response in `scripts/verify-live.ts`, added SQLite WAL busy_timeout guard, and enhanced binary diff parsing.
+- **Evidence**: 37 unit tests pass across 5 test suites; `npm run verify` passes 6/6 gates; `npm run verify:live` passes 4/4 checks with true HTTP 429 assertion; `node bin/canopy.js --help` outputs full CLI documentation; clean secrets scan; zero production vulnerabilities in `npm audit --omit=dev`.

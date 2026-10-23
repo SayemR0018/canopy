@@ -183,6 +183,18 @@ export function createCLI(): Command {
   return program;
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve('src/cli/index.ts')) {
+const isCliMain = () => {
+  if (!process.argv[1]) return false;
+  const p = path.resolve(process.argv[1]);
+  return (
+    p === path.resolve('src/cli/index.ts') ||
+    p === path.resolve('dist/cli/index.js') ||
+    p.endsWith(path.join('bin', 'canopy.js')) ||
+    p.endsWith('canopy.js') ||
+    p.endsWith('canopy')
+  );
+};
+
+if (isCliMain()) {
   createCLI().parse(process.argv);
 }

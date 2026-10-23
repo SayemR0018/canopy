@@ -22,12 +22,20 @@ describe('GitService and Path Traversal Security', () => {
     expect(() => validateSafePath('foo\0bar')).toThrow(/Path traversal/);
   });
 
-  it('validates safe revisions', () => {
+  it('validates safe revisions and rejects option injection', () => {
     expect(validateSafeRev('HEAD')).toBe('HEAD');
     expect(validateSafeRev('main')).toBe('main');
     expect(validateSafeRev('HEAD~1')).toBe('HEAD~1');
     expect(() => validateSafeRev('HEAD..other')).toThrow(/Invalid revision/);
     expect(() => validateSafeRev('; rm -rf /')).toThrow(/Invalid revision/);
+    expect(() => validateSafeRev('--help')).toThrow(/revision cannot start with a hyphen/);
+    expect(() => validateSafeRev('-n1')).toThrow(/revision cannot start with a hyphen/);
+    expect(() => validateSafeRev('--all')).toThrow(/revision cannot start with a hyphen/);
+  });
+
+  it('rejects getFile on directories', async () => {
+    const git = new GitService(`${testDataDir}/repo.git`);
+    await expect(git.getFile('apps')).rejects.toThrow(/is a tree, not a file/);
   });
 
   it('lists root tree entries', async () => {

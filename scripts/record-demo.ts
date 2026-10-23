@@ -61,39 +61,63 @@ async function record() {
   try {
     console.log('1. Navigating to Canopy UI...');
     await page.goto(`http://127.0.0.1:${port}`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(3000);
 
     // Toggle theme to show dark/light support
     console.log('2. Testing Theme Toggle...');
     await page.click('#themeToggle');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
     await page.click('#themeToggle');
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
 
     // Lazy Tree Explorer: Expand apps -> apps/web/src -> module_001
     console.log('3. Interacting with Lazy Tree...');
-    // Click on apps directory node
     const appsNode = page.locator('.tree-node:has-text("apps")').first();
     if (await appsNode.count() > 0) {
       await appsNode.click();
-      await page.waitForTimeout(1500);
+      await page.waitForTimeout(2000);
 
-      // Expand web
       const webNode = page.locator('.tree-node:has-text("web")').first();
       if (await webNode.count() > 0) {
         await webNode.click();
-        await page.waitForTimeout(1500);
+        await page.waitForTimeout(2000);
 
-        // Expand src
         const srcNode = page.locator('.tree-node:has-text("src")').first();
         if (await srcNode.count() > 0) {
           await srcNode.click();
           await page.waitForTimeout(2000);
 
-          // Click first file
-          const fileNode = page.locator('.tree-children .tree-node:has-text("module_")').first();
-          if (await fileNode.count() > 0) {
-            await fileNode.click();
+          const file1Node = page.locator('.tree-children .tree-node:has-text("module_001")').first();
+          if (await file1Node.count() > 0) {
+            await file1Node.click();
+            await page.waitForTimeout(5000);
+          }
+
+          const file2Node = page.locator('.tree-children .tree-node:has-text("module_002")').first();
+          if (await file2Node.count() > 0) {
+            await file2Node.click();
+            await page.waitForTimeout(5000);
+          }
+        }
+      }
+    }
+
+    // Expand packages tree slice
+    const pkgNode = page.locator('.tree-node:has-text("packages")').first();
+    if (await pkgNode.count() > 0) {
+      await pkgNode.click();
+      await page.waitForTimeout(2000);
+      const uiNode = page.locator('.tree-node:has-text("ui")').first();
+      if (await uiNode.count() > 0) {
+        await uiNode.click();
+        await page.waitForTimeout(2000);
+        const compNode = page.locator('.tree-node:has-text("components")').first();
+        if (await compNode.count() > 0) {
+          await compNode.click();
+          await page.waitForTimeout(2000);
+          const compFile = page.locator('.tree-children .tree-node:has-text("module_")').first();
+          if (await compFile.count() > 0) {
+            await compFile.click();
             await page.waitForTimeout(4000);
           }
         }
@@ -103,38 +127,48 @@ async function record() {
     // Switch to Digest Tab
     console.log('4. Demonstrating AI Digest...');
     await page.click('button[data-tab="digest"]');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(2500);
 
     // Run Digest in English
     await page.click('#runDigestBtn');
-    await page.waitForTimeout(6000);
+    await page.waitForTimeout(7000);
 
     // Run Digest in Bengali
     console.log('5. Demonstrating Bengali Digest (--lang bn)...');
     await page.selectOption('#digestLang', 'bn');
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
     await page.click('#runDigestBtn');
-    await page.waitForTimeout(6000);
+    await page.waitForTimeout(7000);
 
     // Switch to Why Tab
     console.log('6. Demonstrating Why Inspector...');
     await page.click('button[data-tab="why"]');
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(2500);
+    await page.fill('#whyPath', 'apps/web/src/module_001.ts');
+    await page.waitForTimeout(1000);
     await page.click('#runWhyBtn');
-    await page.waitForTimeout(6000);
+    await page.waitForTimeout(7000);
+
+    await page.fill('#whyPath', 'apps/api/src/services/module_001.ts');
+    await page.waitForTimeout(1000);
+    await page.click('#runWhyBtn');
+    await page.waitForTimeout(7000);
 
     // Switch to Metrics Tab
     console.log('7. Demonstrating Agent Trace & Metrics view...');
     await page.click('button[data-tab="metrics"]');
     await page.waitForTimeout(4000);
 
-    // Scroll metrics down slightly to see trace
-    await page.evaluate(() => window.scrollBy(0, 300));
-    await page.waitForTimeout(3000);
+    // Scroll metrics down to inspect JSON trace
+    await page.evaluate(() => window.scrollBy(0, 350));
+    await page.waitForTimeout(4000);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(2000);
 
-    // Back to files
+    // Back to files for closing summary
+    console.log('8. Returning to Explorer view...');
     await page.click('button[data-tab="explorer"]');
-    await page.waitForTimeout(3000);
+    await page.waitForTimeout(4000);
 
     console.log('Recording sequence completed.');
   } finally {
@@ -157,23 +191,38 @@ async function record() {
     fs.rmSync(videoTempDir, { recursive: true, force: true });
   }
 
-  // Convert to docs/demo.gif if ffmpeg is found
-  const playwrightFfmpeg = 'C:\\Users\\Sayem\\AppData\\Local\\ms-playwright\\ffmpeg-1013\\ffmpeg-win64.exe';
+  // Locate ffmpeg with GIF support
+  const possibleFfmpegPaths = [
+    'C:\\Users\\Sayem\\AppData\\Local\\CapCut\\Apps\\9.5.0.4050\\ffmpeg.exe',
+    'C:\\Users\\Sayem\\AppData\\Local\\CapCut\\Apps\\9.4.0.4015\\ffmpeg.exe',
+    'C:\\Users\\Sayem\\AppData\\Local\\CapCut\\Apps\\9.3.0.3970\\ffmpeg.exe',
+    'ffmpeg',
+  ];
   let ffmpegBin = '';
-  if (fs.existsSync(playwrightFfmpeg)) {
-    ffmpegBin = playwrightFfmpeg;
+  for (const p of possibleFfmpegPaths) {
+    if (p === 'ffmpeg') {
+      try {
+        const { execSync } = await import('node:child_process');
+        execSync('where.exe ffmpeg', { stdio: 'ignore' });
+        ffmpegBin = 'ffmpeg';
+        break;
+      } catch {}
+    } else if (fs.existsSync(p)) {
+      ffmpegBin = p;
+      break;
+    }
   }
 
   if (ffmpegBin && fs.existsSync(destWebm)) {
     console.log(`Converting ${destWebm} to docs/demo.gif using ${ffmpegBin}...`);
     const destGif = path.join(docsDir, 'demo.gif');
     try {
-      // Generate optimized gif under 10MB: 640px width, 10fps
+      // Generate optimized gif under 10MB: 540px width, 8fps
       await new Promise<void>((resolve, reject) => {
         const proc = spawn(ffmpegBin, [
           '-y',
           '-i', destWebm,
-          '-vf', 'fps=10,scale=640:-1:flags=lanczos,split[s0][s1];[s0]palettegen=max_colors=128[p];[s1][p]paletteuse=dither=bayer',
+          '-vf', 'fps=8,scale=540:-1:flags=lanczos',
           destGif,
         ]);
         proc.on('close', (code) => {
@@ -187,7 +236,7 @@ async function record() {
       console.warn(`Could not convert to GIF: ${err.message}`);
     }
   } else {
-    console.log('ffmpeg binary not available in PATH; skipping demo.gif.');
+    console.log('ffmpeg binary not available; skipping demo.gif.');
   }
 
   console.log('🎉 Demo recording completed successfully!');

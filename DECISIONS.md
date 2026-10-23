@@ -15,3 +15,9 @@
 - D013: Packaged application in multi-stage Docker container with auto-seeding on boot in ~1.5s, satisfying Render's sub-60s boot health requirement.
 - D014: Authored Infrastructure-as-Code Blueprint (`render.yaml`) and exact 3-click manual deployment guide (`DEPLOY.md`) as standard fallback protocol.
 - D015: Automated live verification suite (`scripts/verify-live.ts`) validating `/healthz`, lazy file fetch, 175.5x cold vs warm digest speedup, and rate limit response.
+- D016: Added SQLite PRAGMA busy_timeout = 5000 to eliminate transient database lock failures under high concurrent write load.
+- D017: Patched validateSafeRev to forbid revision arguments starting with a hyphen (-) to prevent command option injection into git CLI invocations.
+- D018: Guarded getFile to verify git object type is a blob via `cat-file -t` and reject directory tree paths with HTTP 400.
+- D019: Enforced public read-only mode (PUBLIC_READONLY) by returning HTTP 403 Forbidden on write/mutation endpoints.
+- D020: Fixed CLI binary entrypoint in bin/canopy.js and server compiled entrypoint in dist/server/index.js with robust main module detection.
+- D021: Re-recorded demo walkthrough to 86.2 seconds and generated 0.91 MB demo.gif using system ffmpeg, fulfilling 60-90s duration and <10MB GIF requirements.

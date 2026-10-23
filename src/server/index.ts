@@ -83,7 +83,18 @@ async function startServer() {
   return { app, server, gitService, db };
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve('src/server/index.ts')) {
+const isServerMain = () => {
+  if (!process.argv[1]) return false;
+  const p = path.resolve(process.argv[1]);
+  return (
+    p === path.resolve('src/server/index.ts') ||
+    p === path.resolve('dist/server/index.js') ||
+    p.endsWith(path.join('server', 'index.js')) ||
+    p.endsWith(path.join('server', 'index.ts'))
+  );
+};
+
+if (isServerMain()) {
   startServer().catch((err) => {
     console.error('Failed to start Canopy server:', err);
     process.exit(1);

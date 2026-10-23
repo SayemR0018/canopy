@@ -81,4 +81,15 @@ describe('Canopy Lazy Client (M2)', () => {
     expect(summary.cacheHitRate).toBe(50);
     expect(summary.savingsPercent).toBeGreaterThan(50);
   });
+
+  it('runs bin/canopy.js CLI entrypoint cleanly', async () => {
+    const { execSync } = await import('node:child_process');
+    const stdout = execSync('node bin/canopy.js --help', { encoding: 'utf8' });
+    expect(stdout).toContain('canopy [options] [command]');
+    expect(stdout).toContain('mount');
+    expect(stdout).toContain('cat');
+    expect(stdout).toContain('digest');
+    expect(stdout).toContain('commit');
+    expect(stdout).toContain('why');
+  });
 });

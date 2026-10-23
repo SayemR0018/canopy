@@ -50,6 +50,9 @@ export function validateSafePath(p?: string): string {
 export function validateSafeRev(rev?: string): string {
   if (!rev) return 'HEAD';
   const clean = rev.trim();
+  if (clean.startsWith('-')) {
+    throw new Error('Invalid revision specification: revision cannot start with a hyphen');
+  }
   // Valid git revision: alphanumeric, hyphens, underscores, dots, slashes, carets, tildes
   if (!/^[a-zA-Z0-9_\-./~^]+$/.test(clean) || clean.includes('..')) {
     throw new Error('Invalid revision specification');
@@ -137,6 +140,12 @@ export class GitService {
       throw new Error('File path is required');
     }
     const rev = validateSafeRev(revParam);
+
+    // Verify target object is a blob and not a tree (directory)
+    const objType = (await this.runGit(['cat-file', '-t', `${rev}:${safePath}`])).trim();
+    if (objType !== 'blob') {
+      throw new Error(`Path '${safePath}' is a ${objType}, not a file`);
+    }
 
     // Get content
     const content = await this.runGit(['cat-file', '-p', `${rev}:${safePath}`]);

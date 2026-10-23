@@ -18,7 +18,8 @@ On top of this lazy filesystem layer, Canopy introduces a derived AI cache. When
 
 The demo demonstrates Canopy's lazy file tree explorer, live semantic summaries, changeset digest with Bengali language support, architectural history analysis, and the real-time agent trace dashboard.
 
-- **Demo Video**: [docs/demo.webm](https://github.com/SayemR0018/canopy/blob/main/docs/demo.webm) (WebM, 1280x720, 3.1 MB)
+- **Demo Video**: [docs/demo.webm](https://github.com/SayemR0018/canopy/blob/main/docs/demo.webm) (WebM, 1280x720, 86s, 5.4 MB)
+- **Demo GIF**: [docs/demo.gif](https://github.com/SayemR0018/canopy/blob/main/docs/demo.gif) (GIF, 540x304, 0.91 MB)
 - **Live Deployment**: [https://canopy-lazy-git.onrender.com](https://canopy-lazy-git.onrender.com) (Render Docker Web Service)
 
 ## Code

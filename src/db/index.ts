@@ -33,12 +33,14 @@ export function openDatabase(dbPath: string): DatabaseAdapter {
     const BetterSqlite3 = req('better-sqlite3');
     const db = new BetterSqlite3(dbPath);
     db.pragma('journal_mode = WAL');
+    db.pragma('busy_timeout = 5000');
     return db;
   } catch {
     // Fall back to built-in node:sqlite
     const { DatabaseSync } = req('node:sqlite');
     const db = new DatabaseSync(dbPath);
     db.exec('PRAGMA journal_mode = WAL;');
+    db.exec('PRAGMA busy_timeout = 5000;');
 
     return {
       exec(sql: string): void {

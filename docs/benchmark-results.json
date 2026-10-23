@@ -1,13 +1,13 @@
 {
-  "cloneDurationMs": 1775,
+  "cloneDurationMs": 1844,
   "cloneTotalBytes": 2908949,
   "cloneWorkingTreeBytes": 1486369,
-  "mountDurationMs": 184,
+  "mountDurationMs": 182,
   "mountBytes": 550887,
-  "files5ColdDurationMs": 771,
+  "files5ColdDurationMs": 756,
   "files5ColdBytes": 2623,
-  "files5CachedDurationMs": 64.5,
+  "files5CachedDurationMs": 63.1,
   "totalTransferred5Files": 553510,
   "savings5FilesPct": 81,
-  "speedupCold": 1.9
+  "speedupCold": 2
 }

@@ -35,4 +35,4 @@ ENV DAILY_TOKEN_CAP=200000
 EXPOSE 10000
 
 # On boot, startServer auto-seeds deterministic 3,000 file synthetic repo in ~1.5s
-CMD ["npm", "run", "server"]
+CMD ["npm", "start"]

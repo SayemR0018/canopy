@@ -8,6 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "start": "node dist/server/index.js",
     "seed": "tsx scripts/seed.ts",
     "server": "tsx src/server/index.ts",
     "cli": "tsx src/cli/index.ts",
