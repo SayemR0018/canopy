@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "A lazy, AI-assisted layer over git",
   "type": "module",
+  "engines": {
+    "node": ">=22.5.0"
+  },
   "bin": {
     "canopy": "./bin/canopy.js"
   },
@@ -40,7 +43,6 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.49.1",
-    "@rollup/rollup-win32-x64-msvc": "^4.65.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.10.2",
     "playwright": "^1.49.1",

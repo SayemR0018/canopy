@@ -2,7 +2,9 @@ node_modules
 data
 dist
 test-data-*
+test-verify-data
 canopy-workspace*
+.user_uploaded
 .env
 *.log
 coverage

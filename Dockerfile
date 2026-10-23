@@ -1,12 +1,9 @@
 FROM node:22-slim
 
-# Install git, ca-certificates, and build tools
+# Install git and ca-certificates
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     ca-certificates \
-    python3 \
-    make \
-    g++ \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -16,16 +13,22 @@ RUN git config --global user.name "Canopy Bot" && \
     git config --global user.email "bot@canopy.local" && \
     git config --global init.defaultBranch main
 
-# Install dependencies
+# Copy dependency manifests
 COPY package*.json ./
-RUN npm install
+COPY tsconfig.json ./
 
-# Copy source code and build
+# Install dependencies without optional native compilation (Node 22 built-in node:sqlite is used)
+RUN npm install --omit=optional
+
+# Copy source code and build TypeScript
 COPY . .
 RUN npm run build
 
+# Prune devDependencies to keep production container slim and fast
+RUN npm prune --omit=dev
+
 # Pre-seed the synthetic monorepo during build so container boot is instant (<50ms)
-RUN mkdir -p /app/data && node --experimental-sqlite -e "import('./dist/seed.js').then(m => m.seedRepository('/app/data'))"
+RUN mkdir -p /app/data && node --experimental-sqlite -e "import('./dist/seed.js').then(m => m.seedRepository('/app/data')).catch(e => { console.error(e); process.exit(1); })"
 
 # Default environment configuration
 ENV PORT=10000
@@ -39,8 +42,8 @@ ENV NODE_OPTIONS="--experimental-sqlite"
 
 EXPOSE 10000
 
-# Docker healthcheck querying /healthz on port 10000 using built-in Node fetch
-HEALTHCHECK --interval=10s --timeout=5s --start-period=5s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:10000/healthz').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
+# Docker healthcheck querying /healthz on $PORT using built-in Node fetch
+HEALTHCHECK --interval=15s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || '10000') + '/healthz').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
 CMD ["npm", "start"]

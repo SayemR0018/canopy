@@ -22,3 +22,4 @@
 - D020: Fixed CLI binary entrypoint in bin/canopy.js and server compiled entrypoint in dist/server/index.js with robust main module detection.
 - D021: Re-recorded demo walkthrough to 86.2 seconds and generated 0.91 MB demo.gif using system ffmpeg, fulfilling 60-90s duration and <10MB GIF requirements.
 - D022: Upgraded Dockerfile to node:22-slim with built-in node:sqlite (--experimental-sqlite), bound HTTP listener explicitly to 0.0.0.0, pre-seeded synthetic repo at Docker build time (<50ms boot), and added .dockerignore.
+- D023: Removed platform-locked @rollup/rollup-win32-x64-msvc from devDependencies (causing EBADPLATFORM on Linux npm install), omitted optional native builds in Docker, added npm prune --omit=dev, set Node >=22.5.0 in package.json engines, and configured DATA_DIR=/app/data in render.yaml.
