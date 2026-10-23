@@ -20,6 +20,7 @@
     "verify": "tsx scripts/verify.ts",
     "verify:live": "tsx scripts/verify-live.ts",
     "check-claims": "tsx scripts/check-claims.ts",
+    "bakeoff": "tsx scripts/bakeoff.ts",
     "demo:record": "tsx scripts/record-demo.ts"
   },
   "keywords": [

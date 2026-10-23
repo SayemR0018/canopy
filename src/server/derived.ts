@@ -152,7 +152,7 @@ export class DerivedService {
     return PROMPT_VERSIONS[kind] || 'v1.0';
   }
 
-  private isDailyCapExceeded(): boolean {
+  public isDailyCapExceeded(): boolean {
     const today = new Date().toISOString().slice(0, 10);
     try {
       const row = this.db.prepare<{ total: number }>(`
@@ -333,17 +333,31 @@ export class DerivedService {
         totalTokensOut += response.tokensOut;
         totalLatency += response.latencyMs;
 
+        // Strip thinking/reasoning blocks (e.g. <thought>...</thought> or <think>...</think>)
+        const cleanedText = response.text.replace(/<(thought|think)>[\s\S]*?<\/\1>/gi, '').trim();
+
         // Try parsing JSON
         let rawJson: any;
         try {
-          rawJson = JSON.parse(response.text);
+          rawJson = JSON.parse(cleanedText);
         } catch {
           // Sometimes models wrap in markdown code blocks: ```json ... ```
-          const match = response.text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+          const match = cleanedText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
           if (match) {
-            rawJson = JSON.parse(match[1]);
-          } else {
-            throw new Error('LLM response is not valid JSON');
+            try {
+              rawJson = JSON.parse(match[1]);
+            } catch {
+              rawJson = null;
+            }
+          }
+          if (!rawJson) {
+            const firstBrace = cleanedText.indexOf('{');
+            const lastBrace = cleanedText.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+              rawJson = JSON.parse(cleanedText.slice(firstBrace, lastBrace + 1));
+            } else {
+              throw new Error('LLM response is not valid JSON');
+            }
           }
         }
 

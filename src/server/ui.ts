@@ -362,6 +362,39 @@ export function renderCanopyHtml(): string {
       margin-top: 0.25rem;
     }
 
+    .warming-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #f59e0b;
+      animation: pulse 2s infinite;
+    }
+
+    .warming-badge.ready {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #10b981;
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .progress-msg {
+      font-size: 0.85rem;
+      color: var(--primary);
+      margin-top: 0.6rem;
+      font-style: italic;
+    }
+
     @media (max-width: 768px) {
       .explorer-layout { grid-template-columns: 1fr; height: auto; }
       .tree-panel { max-height: 300px; }
@@ -381,6 +414,7 @@ export function renderCanopyHtml(): string {
       <button class="tab-btn" data-tab="metrics">📊 Metrics & Traces</button>
     </nav>
     <div class="header-actions">
+      <div id="warmingIndicator" class="warming-badge" style="display: none;"></div>
       <button class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Theme">🌓 Theme</button>
     </div>
   </header>
@@ -435,6 +469,7 @@ export function renderCanopyHtml(): string {
           </select>
         </div>
         <button class="btn" id="runDigestBtn">Run Canopy Digest</button>
+        <div id="digestProgressMsg" class="progress-msg" style="display: none;"></div>
 
         <div class="result-box" id="digestResult" style="display: none;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
@@ -458,9 +493,10 @@ export function renderCanopyHtml(): string {
         </p>
         <div class="form-group">
           <label class="form-label" for="whyPath">File Path</label>
-          <input type="text" id="whyPath" class="form-control" value="apps/web/src/module_001.ts" placeholder="e.g. apps/web/src/module_001.ts">
+          <input type="text" id="whyPath" class="form-control" value="apps/web/src/module_001.tsx" placeholder="e.g. apps/web/src/module_001.tsx">
         </div>
         <button class="btn" id="runWhyBtn">Explain Architectural Role</button>
+        <div id="whyProgressMsg" class="progress-msg" style="display: none;"></div>
 
         <div class="result-box" id="whyResult" style="display: none;">
           <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
@@ -654,8 +690,54 @@ export function renderCanopyHtml(): string {
       }
     }
 
+    // Progress and Timeout Helper for Slow Inference Calls
+    function startProgress(progressEl, label) {
+      progressEl.style.display = 'block';
+      progressEl.textContent = label + ': Contacting Canopy server...';
+      const start = Date.now();
+      const id = setInterval(() => {
+        const s = Math.round((Date.now() - start) / 1000);
+        if (s >= 25) {
+          progressEl.textContent = label + ': Validating response schema & risk flags (' + s + 's)...';
+        } else if (s >= 15) {
+          progressEl.textContent = label + ': Synthesizing semantic context with Gemma (' + s + 's)...';
+        } else if (s >= 5) {
+          progressEl.textContent = label + ': Running Google Gemma inference (' + s + 's, cold starts take ~10-15s)...';
+        } else if (s >= 2) {
+          progressEl.textContent = label + ': Analyzing repository graph & diffs (' + s + 's)...';
+        }
+      }, 1000);
+      return () => {
+        clearInterval(id);
+        progressEl.style.display = 'none';
+      };
+    }
+
+    // Warming Status Checker
+    async function checkWarmingStatus() {
+      try {
+        const res = await fetch('/api/warming');
+        const data = await res.json();
+        const el = document.getElementById('warmingIndicator');
+        if (!el) return;
+        if (data.status === 'warming') {
+          el.style.display = 'inline-flex';
+          el.className = 'warming-badge';
+          el.innerHTML = '<span>🔥 Warming: ' + data.warmedCount + '/' + data.totalToWarm + '</span>';
+          setTimeout(checkWarmingStatus, 2500);
+        } else if (data.status === 'ready' && data.warmedCount > 0) {
+          el.style.display = 'inline-flex';
+          el.className = 'warming-badge ready';
+          el.innerHTML = '<span>⚡ Cache Warm (' + data.warmedCount + '/' + data.totalToWarm + ')</span>';
+        } else {
+          el.style.display = 'none';
+        }
+      } catch (e) {}
+    }
+
     // Digest Panel Handler
     const runDigestBtn = document.getElementById('runDigestBtn');
+    const digestProgressMsg = document.getElementById('digestProgressMsg');
     const digestSince = document.getElementById('digestSince');
     const digestLang = document.getElementById('digestLang');
     const digestResult = document.getElementById('digestResult');
@@ -670,10 +752,16 @@ export function renderCanopyHtml(): string {
       runDigestBtn.textContent = 'Generating Digest...';
       digestResult.style.display = 'none';
 
+      const stopProgress = startProgress(digestProgressMsg, 'Digest');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
+
       try {
         const since = digestSince.value || 'HEAD~5';
         const lang = digestLang.value || 'en';
-        const res = await fetch('/api/derived/digest?since=' + encodeURIComponent(since) + '&lang=' + encodeURIComponent(lang));
+        const res = await fetch('/api/derived/digest?since=' + encodeURIComponent(since) + '&lang=' + encodeURIComponent(lang), {
+          signal: controller.signal,
+        });
         const data = await res.json();
 
         digestResult.style.display = 'block';
@@ -694,8 +782,14 @@ export function renderCanopyHtml(): string {
           });
         }
       } catch (err) {
-        alert('Digest failed: ' + err.message);
+        if (err.name === 'AbortError') {
+          alert('Digest request timed out after 45s. The model provider may be slow. Please retry.');
+        } else {
+          alert('Digest failed: ' + err.message);
+        }
       } finally {
+        clearTimeout(timeoutId);
+        stopProgress();
         runDigestBtn.disabled = false;
         runDigestBtn.textContent = 'Run Canopy Digest';
       }
@@ -703,6 +797,7 @@ export function renderCanopyHtml(): string {
 
     // Why Panel Handler
     const runWhyBtn = document.getElementById('runWhyBtn');
+    const whyProgressMsg = document.getElementById('whyProgressMsg');
     const whyPath = document.getElementById('whyPath');
     const whyResult = document.getElementById('whyResult');
     const whyFileTitle = document.getElementById('whyFileTitle');
@@ -716,9 +811,15 @@ export function renderCanopyHtml(): string {
       runWhyBtn.textContent = 'Analyzing Context...';
       whyResult.style.display = 'none';
 
+      const stopProgress = startProgress(whyProgressMsg, 'Architectural Analysis');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000);
+
       try {
         const path = whyPath.value.trim();
-        const res = await fetch('/api/derived/why?path=' + encodeURIComponent(path));
+        const res = await fetch('/api/derived/why?path=' + encodeURIComponent(path), {
+          signal: controller.signal,
+        });
         const data = await res.json();
 
         whyResult.style.display = 'block';
@@ -730,8 +831,14 @@ export function renderCanopyHtml(): string {
         whyArch.textContent = data.data.architecture;
         whyPatterns.textContent = data.data.change_patterns;
       } catch (err) {
-        alert('Why inspection failed: ' + err.message);
+        if (err.name === 'AbortError') {
+          alert('Why analysis timed out after 45s. The model provider may be slow. Please retry.');
+        } else {
+          alert('Why inspection failed: ' + err.message);
+        }
       } finally {
+        clearTimeout(timeoutId);
+        stopProgress();
         runWhyBtn.disabled = false;
         runWhyBtn.textContent = 'Explain Architectural Role';
       }
@@ -778,6 +885,7 @@ export function renderCanopyHtml(): string {
 
     // Initial Load
     loadTree();
+    checkWarmingStatus();
   </script>
 </body>
 </html>`;

@@ -76,4 +76,8 @@
 - **Status**: DONE
 - **Done**: Built scripts/check-claims.ts and integrated into verify gate suite. Implemented per-directory manifest slices for canopy mount (fetches root slice of 767 bytes; expands directories on demand). Ran 7-iteration benchmark reporting median/min/max against full clone and working tree in consistent KiB/MiB units. Regenerated docs/benchmark-results.json, README table, and docs/POST_FACTS.md with baseline explanation and Node >= 22.5.0.
 - **Evidence**: 7-iteration benchmark recorded: mount 266 ms / 767 bytes; 5-file cold read 1,102 ms / 1,937 bytes; 99.9% bandwidth reduction vs full clone (2.77 MiB); 99.8% vs working tree (1.42 MiB). check-claims passed 86/86 claims; 45 unit tests passed; npm run verify 7/7 gates passed.
-- **Next**: P2 - Cold-Start Fix (Gemma model bakeoff, background demo cache warming, UI warming indicator, request timeouts).
+## P2: Cold-Start Fix
+- **Status**: DONE
+- **Done**: Executed empirical 5-run bakeoff between `models/gemma-4-26b-a4b-it` and `models/gemma-4-31b-it` via Google AI Studio API (`docs/bakeoff.md`). 26b won on all metrics: 100% schema validity (vs 80%), p50 13,705 ms (vs 24,200 ms), 0 retries (vs 2), 0 degraded fallbacks (vs 1). Patched `DerivedService` to strip `<thought>` reasoning tokens before JSON extraction. Built background cache warmer (`src/server/warmer.ts`) pre-warming 5 items on boot (en/bn digests and 3 key architecture files). Added 60s server-side timeout guards and Web UI progressive status timers with 45s AbortController and `/api/warming` status polling indicator.
+- **Evidence**: `docs/bakeoff.md` generated with full run tables; unit test added in `test/server.test.ts` for `/api/warming` and `/healthz` cacheWarming (46 tests pass); `npm run verify` passes 7/7 gates.
+- **Next**: P3 - GitHub Category (CI workflow, keepwarm cron workflow, copilot-instructions, pull request template, good first issues).

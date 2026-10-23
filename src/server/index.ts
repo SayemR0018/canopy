@@ -7,6 +7,8 @@ import { GitService } from './git.js';
 import { openDatabase } from '../db/index.js';
 import { seedRepository } from '../seed.js';
 import { createSentry } from './sentry.js';
+import { DerivedService } from './derived.js';
+import { warmCacheInBackground } from './warmer.js';
 
 dotenv.config();
 
@@ -64,9 +66,12 @@ async function startServer(overridePort?: number, overrideHost?: string) {
 
   const sentry = createSentry(process.env.SENTRY_DSN);
 
+  const derivedService = new DerivedService(db, undefined, DAILY_TOKEN_CAP);
+
   const app = createApp({
     gitService,
     db,
+    derivedService,
     publicReadonly: PUBLIC_READONLY,
     rateLimitPerMin: RATE_LIMIT_PER_MIN,
     dailyTokenCap: DAILY_TOKEN_CAP,
@@ -89,12 +94,20 @@ async function startServer(overridePort?: number, overrideHost?: string) {
         if (process.env.SENTRY_DSN) {
           sentry.captureMessage(`Canopy Server running on port ${info.port}`, 'info');
         }
+
+        // Trigger background demo cache warming in production if API key is set
+        if (process.env.CANOPY_LLM_API_KEY && process.env.NODE_ENV !== 'test') {
+          warmCacheInBackground(gitService, derivedService).catch((err) => {
+            console.error('Background warming failed:', err);
+          });
+        }
+
         resolve(s);
       }
     );
   });
 
-  return { app, server, gitService, db, sentry };
+  return { app, server, gitService, db, sentry, derivedService };
 }
 
 const isServerMain = () => {

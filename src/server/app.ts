@@ -6,6 +6,7 @@ import type { DatabaseAdapter } from '../db/index.js';
 import { DerivedService } from './derived.js';
 import { createSentry } from './sentry.js';
 import { renderCanopyHtml } from './ui.js';
+import { warmingState } from './warmer.js';
 
 export interface AppConfig {
   gitService: GitService;
@@ -86,10 +87,21 @@ export function createApp(config: AppConfig) {
       status: 'ok',
       uptime: Math.floor(process.uptime()),
       cacheEntries: cacheCount,
+      cacheWarming: {
+        status: warmingState.status,
+        warmedCount: warmingState.warmedCount,
+        totalToWarm: warmingState.totalToWarm,
+        currentStep: warmingState.currentStep,
+      },
       memoryUsage: process.memoryUsage(),
       publicReadonly,
       timestamp: new Date().toISOString(),
     });
+  });
+
+  // GET /api/warming endpoint
+  app.get('/api/warming', (c) => {
+    return c.json(warmingState);
   });
 
   // GET /api/tree?dir=&rev=&recursive=
@@ -200,6 +212,24 @@ export function createApp(config: AppConfig) {
     }
     return derivedService;
   };
+
+  // 60-second server timeout guard on derived AI endpoints
+  app.use('/api/derived/*', async (c, next) => {
+    let timeoutId: any;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error('Gateway Timeout: LLM derivation exceeded 60s limit')), 60000);
+    });
+    try {
+      await Promise.race([next(), timeoutPromise]);
+    } catch (err: any) {
+      if (err.message.includes('Gateway Timeout')) {
+        return c.json({ error: err.message }, 504);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  });
 
   // GET or POST /api/derived/summary
   app.all('/api/derived/summary', async (c) => {

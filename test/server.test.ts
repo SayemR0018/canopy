@@ -56,6 +56,15 @@ describe('Canopy API Server (M1)', () => {
     expect(body.status).toBe('ok');
     expect(body.cacheEntries).toBe(0);
     expect(body.publicReadonly).toBe(true);
+    expect(body.cacheWarming).toBeDefined();
+  });
+
+  it('GET /api/warming returns warming status', async () => {
+    const res = await app.request('/api/warming');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.status).toBeDefined();
+    expect(body.totalToWarm).toBe(5);
   });
 
   it('GET /api/tree lists root directories', async () => {
