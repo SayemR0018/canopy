@@ -96,4 +96,8 @@
 - **Status**: SKIPPED
 - **Done**: Verified secret availability; `TINKER_API_KEY` is not present in `.env` or system environment. Per project secret handling policy, safely skipped Tinker fine-tuning/integration while maintaining Google AI Studio Gemma 4 (`models/gemma-4-26b-a4b-it`) inference.
 - **Evidence**: Decision D030 logged in `DECISIONS.md`.
-- **Next**: P7 - DEV Post Rewrite (`docs/POST_DRAFT.md`, DEV challenge requirements, raw GitHub GIF URL, details blocks, what went wrong D007/D023/D024, honest DevRelay and agent description).
+## P7: DEV Post Rewrite
+- **Status**: DONE
+- **Done**: Fully overhauled `docs/POST_DRAFT.md` adhering to the DEV Hacktoberfest challenge specifications: strong 3-sentence hook, prominent live link (`https://canopy-lazy-git.onrender.com`), raw GitHub URL for `docs/demo.gif`, collapsible `<details>` blocks for benchmark data and 7 verification gates, detailed 'What Went Wrong' analysis covering D007 (dual SQLite adapter), D023 (Windows native rollup dependency breaking Linux Docker), and D024 (proxy IP & port stripping for rate limiting), cold-start bakeoff and boot-time cache warmer benchmarks, Sentry GenAI agent tracing and privacy protections, and honest reporting of pair programming with Antigravity and DevRelay MCP verification. Created draft article directly on DEV via DevRelay MCP `create_article` (ID: 4907817, `published: false`).
+- **Evidence**: `docs/POST_DRAFT.md` rewritten and verified; DEV draft article 4907817 staged; `npm run check-claims` passed 86/86 claims.
+- **Next**: Final Verification & Hardening Gates (npm run verify, verify:live, check-claims, npm audit --omit=dev, secrets scan).
