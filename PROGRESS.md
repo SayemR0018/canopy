@@ -92,4 +92,8 @@
 - **Status**: DONE
 - **Done**: Created `scripts/verify-ollama.ts` (`npm run verify:ollama`) probing local Ollama daemon at `http://localhost:11434` with 3s timeout. Verified graceful offline handling when daemon is not installed, outputting setup guide (pulling `gemma2:2b`, setting `CANOPY_LLM_BASE_URL=http://localhost:11434/v1`), and generating `docs/ollama-results.json` without failing test runs.
 - **Evidence**: `npm run verify:ollama` executed with exit code 0; `docs/ollama-results.json` generated; `npm run check-claims` and all unit tests pass.
-- **Next**: P6 - Tinker (check TINKER_API_KEY presence, record skip decision if absent).
+## P6: Tinker
+- **Status**: SKIPPED
+- **Done**: Verified secret availability; `TINKER_API_KEY` is not present in `.env` or system environment. Per project secret handling policy, safely skipped Tinker fine-tuning/integration while maintaining Google AI Studio Gemma 4 (`models/gemma-4-26b-a4b-it`) inference.
+- **Evidence**: Decision D030 logged in `DECISIONS.md`.
+- **Next**: P7 - DEV Post Rewrite (`docs/POST_DRAFT.md`, DEV challenge requirements, raw GitHub GIF URL, details blocks, what went wrong D007/D023/D024, honest DevRelay and agent description).
