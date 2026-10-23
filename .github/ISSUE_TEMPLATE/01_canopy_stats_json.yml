@@ -1,0 +1,34 @@
+name: Good First Issue: canopy stats --json
+description: Add --json flag to canopy stats CLI command for automated parsing
+title: "feat(cli): Add --json flag to canopy stats"
+labels: ["good first issue", "enhancement", "cli"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Feature Request: `canopy stats --json`
+        
+        Currently, `canopy stats` prints a human-readable terminal summary showing cache hits, bytes downloaded, and bandwidth saved. To allow agent workflows and automated scripts to easily parse these metrics without regex scraping, `canopy stats` should support an optional `--json` flag.
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      value: |
+        - [ ] When invoked as `canopy stats --json`, output valid JSON to stdout with no decorative ASCII or colors.
+        - [ ] JSON schema must include:
+          ```json
+          {
+            "mounted": true,
+            "totalReads": 5,
+            "cachedReads": 4,
+            "networkFetches": 1,
+            "cacheHitRatePct": 80.0,
+            "bytesDownloaded": 1937,
+            "bytesSavedVsClone": 2898437,
+            "bandwidthSavingsPct": 99.9
+          }
+          ```
+        - [ ] Vitest test added in `test/client.test.ts` asserting `--json` output can be parsed with `JSON.parse()`.
+        - [ ] Existing default human-readable terminal table remains unchanged when `--json` is omitted.
+        - [ ] `npm run verify` passes all 7 gates.

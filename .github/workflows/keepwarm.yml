@@ -1,0 +1,17 @@
+name: Canopy Production Keepwarm
+
+on:
+  schedule:
+    # Trigger every 10 minutes to prevent Render free-tier instance sleep
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keepwarm:
+    name: Ping Health Endpoint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Canopy Healthz
+        run: |
+          curl -fsS --connect-timeout 15 --max-time 30 https://canopy-lazy-git.onrender.com/healthz

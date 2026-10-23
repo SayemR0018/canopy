@@ -1,0 +1,22 @@
+name: Good First Issue: Windows Developer Setup Notes
+description: Document Windows environment nuances, PowerShell syntax, and Node 22 SQLite guidance
+title: "docs: Add Windows developer setup notes and PowerShell troubleshooting"
+labels: ["good first issue", "documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ### Documentation Task: Windows Developer Setup Guide
+        
+        Canopy runs cross-platform on Linux and Windows, leveraging Node 22's built-in `node:sqlite` adapter to avoid native MSVC compilation dependencies. However, developers running on Windows PowerShell face unique shell differences (e.g. `;` instead of `&&`, line ending formatting).
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      value: |
+        - [ ] Add a `Windows Developer Notes` section to `README.md` or a new `docs/WINDOWS_SETUP.md`.
+        - [ ] Clarify that Node >= 22.5.0 includes native SQLite (`node:sqlite`), meaning Visual Studio C++ build tools are not required.
+        - [ ] Document PowerShell command chaining (use `;` instead of `&&` on Windows PowerShell 5.1).
+        - [ ] Note git CRLF vs LF configuration recommendation (`git config core.autocrlf input`).
+        - [ ] Validate instructions by verifying a fresh clone on Windows executes `npm install` and `npm test` without warnings.
