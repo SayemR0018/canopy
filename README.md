@@ -204,6 +204,7 @@ npm run trace:demo
 
 | Commit | Timestamp (UTC) | Milestone | Description |
 | :--- | :--- | :--- | :--- |
+| `990d89c` | `2026-10-23T23:21:21Z` | Hardening | Upgrade zod 4.6.7 (0 audit vulnerabilities), DEV draft hf26challenge tag, Sentry semantic attributes |
 | `1d2e4b8` | `2026-10-23T22:59:58Z` | Final Gate | Update verification gates and add deadline and commit record |
 | `ed0183e` | `2026-10-23T22:57:08Z` | P7 | DEV post rewrite with real benchmarks, what went wrong, and devrelay mcp draft |
 | `77ca65c` | `2026-10-23T22:53:42Z` | P6 | Record tinker skip decision per missing secret protocol |
